@@ -11,9 +11,8 @@ const Login = () => {
                 <br />
                 PW : <input type="password" placeholder='PW를 입력하세요' />
                 <br />
-                <button onClick={() => {}}>로그인</button>
+                <button onClick={() => {nav('/home')}}>로그인</button>
                 <button onClick={() => { nav('/join') }}>회원가입</button>
-                <button onClick={() => { nav('/') }}>홈</button>
             </form>
         </div>
     )
