@@ -6,35 +6,45 @@ const Join = () => {
     const [id, setId] = useState('')
     const [pw, setPw] = useState('')
     const [nick, setNick] = useState('')
+    const nav = useNavigate()
     
     // http://localhost:3001 서버로 요청
 
-    const tryJoin = ()=>{
-        
+    const tryJoin = (e)=>{
+        e.preventDefault()
+        console.log(id)
 
         axios
-            .get('http://localhost:3001')
-            .then((res)=>{
-                console.log(res)
+            .post('http://localhost:3001', {
+                id : id,
+                pw: pw,
+                nick: nick
             })
-            .catch(()=>{
-                console.log('요청 실패')
+            .then((res)=>{
+                if(res.data=='회원가입 성공'){
+                    console.log('회원가입 성공: ', res.data)
+                    nav('/')
+                } else if(res.data=='회원가입 실패'){
+                    console.log('회원가입 실패', res.data)
+                }
+            })
+            .catch((err)=>{
+                console.log('회원가입 실패: ', err)
             })
     }
 
-    const nav = useNavigate()
     return (
         <div>
-            <form action="" method='post'>
+            <form onSubmit={tryJoin}>
                 <h1>회원가입 페이지 입니다</h1>
-                ID : <input value={id} onChange={(e)=>setId(e.target.value)} type="text" placeholder='ID를 입력하세요' />
+                ID : <input type='text' value={id} onChange={(e)=>setId(e.target.value)} placeholder='ID를 입력하세요' />
                 <br />
-                PW : <input value={pw} onChange={(e)=>setPw(e.target.value)} type="password" placeholder='PW를 입력하세요' />
+                PW : <input type='password' value={pw} onChange={(e)=>setPw(e.target.value)} placeholder='PW를 입력하세요' />
                 <br />
-                NICK : <input value={nick} onChange={(e)=>setNick(e.target.value)} type="text" placeholder='닉네임을 입력하세요' />
+                NICK : <input type='text' value={nick} onChange={(e)=>setNick(e.target.value)} placeholder='닉네임을 입력하세요' />
                 <br />
-                <button onClick={tryJoin()}>회원가입 시도</button>
-                <button onClick={() => { nav('/') }}>로그인</button>
+                <button type='submit'>회원가입 시도</button>
+                <button type='button' onClick={() => { nav('/') }}>로그인</button>
                 <button type='reset'>초기화</button>
             </form>
         </div>
