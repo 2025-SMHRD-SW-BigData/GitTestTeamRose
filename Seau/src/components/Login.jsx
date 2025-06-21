@@ -21,7 +21,7 @@ const Login = () => {
             .then((res)=>{
                 if(res.data=='로그인 성공'){
                     console.log('로그인 성공: ', res.data)
-                    nav('/')
+                    nav('/home')
                 } else if(res.data=='로그인 실패'){
                     console.log('로그인 실패', res.data)
                 }
