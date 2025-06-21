@@ -6,8 +6,10 @@ const Login = () => {
     const [id, setId] = useState('')
     const [pw, setPw] = useState('')
     const nav = useNavigate()
+    
+    // http://localhost:3001 서버로 요청
 
-    const tryLogin = (e) => {
+    const tryLogin = (e)=>{
         e.preventDefault()
         console.log(id)
 
@@ -32,13 +34,15 @@ const Login = () => {
     return (
         <div>
             <form onSubmit={tryLogin}>
-                <h1>Login 페이지</h1>
-                ID : <input type="text" value={id} onChange={(e)=>setId(e.target.value)} placeholder='ID를 입력하세요' />
+
+                <h1>로그인 페이지 입니다</h1>
+                ID : <input type='text' value={id} onChange={(e)=>setId(e.target.value)} placeholder='ID를 입력하세요' />
                 <br />
-                PW : <input type="password" value={pw} onChange={(e)=>setPw(e.target.value)} placeholder='PW를 입력하세요' />
+                PW : <input type='password' value={pw} onChange={(e)=>setPw(e.target.value)} placeholder='PW를 입력하세요' />
                 <br />
                 <button type='submit'>로그인</button>
-                <button onClick={() => { nav('/join') }}>회원가입</button>
+                <button onClick={()=>{nav('/join')}}>회원가입</button>
+                
             </form>
         </div>
     )

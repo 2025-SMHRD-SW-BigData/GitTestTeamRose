@@ -45,7 +45,6 @@ const Join = () => {
                 <br />
                 <button type='submit'>회원가입</button>
                 <button type='button' onClick={() => { nav('/') }}>로그인</button>
-                <button type='reset'>초기화</button>
             </form>
         </div>
     )
