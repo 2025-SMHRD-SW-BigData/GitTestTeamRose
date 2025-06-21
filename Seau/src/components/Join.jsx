@@ -43,9 +43,8 @@ const Join = () => {
                 <br />
                 NICK : <input type='text' value={nick} onChange={(e)=>setNick(e.target.value)} placeholder='닉네임을 입력하세요' />
                 <br />
-                <button type='submit'>회원가입 시도</button>
-                
-                <button type='reset'>초기화</button>
+                <button type='submit'>회원가입</button>
+                <button type='button' onClick={() => { nav('/') }}>로그인</button>
             </form>
         </div>
     )

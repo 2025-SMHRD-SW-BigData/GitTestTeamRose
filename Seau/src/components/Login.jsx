@@ -15,25 +15,26 @@ const Login = () => {
 
         axios
             .post('http://localhost:3001/login', {
-                id : id,
-                pw: pw
+                id: id,
+                pw: pw,
             })
-            .then((res)=>{
-                if(res.data=='로그인 성공'){
+            .then((res) => {
+                if (res.data == '로그인 성공') {
                     console.log('로그인 성공: ', res.data)
                     nav('/home')
                 } else if(res.data=='로그인 실패'){
                     console.log('로그인 실패', res.data)
                 }
             })
-            .catch((err)=>{
-                console.log('회원가입 실패: ', err)
+            .catch((err) => {
+                console.log('로그인 실패: ', err)
             })
     }
 
     return (
         <div>
             <form onSubmit={tryLogin}>
+
                 <h1>로그인 페이지 입니다</h1>
                 ID : <input type='text' value={id} onChange={(e)=>setId(e.target.value)} placeholder='ID를 입력하세요' />
                 <br />

@@ -6,13 +6,12 @@ const cors = require('cors')
 app.use(cors())
 app.use(express.json())
 
-//http://localhost:3001
+// http://localhost:3001
 app.post('/', (req, res)=>{
     const {id, pw, nick} = req.body
-    console.log(req.body);
     console.log('접근 확인!')
-    //console.log('회원가입 요청:', id, pw, nick)
-    if(id!='asd'){
+    console.log('회원가입 요청:', id, pw, nick)
+    if(id!='rose'){
         res.send('회원가입 성공')
     } else {
         res.send('회원가입 실패')
@@ -29,4 +28,5 @@ app.post('/login', (req,res) => {
         res.send('로그인 실패')
     }
 })
+
 app.listen(3001)

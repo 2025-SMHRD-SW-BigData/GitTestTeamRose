@@ -115,10 +115,10 @@ function Home() {
       {/* 상단바 */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
-          <h1 style={styles.logo}>TravelInfo</h1>
+          <h1 style={styles.logo}>Sea-U</h1>
           <div style={styles.headerButtons}>
             <button style={styles.headerButton} onClick={()=>{nav('/')}}>로그인</button>
-            <button style={styles.headerButton}>마이페이지</button>
+            <button style={styles.headerButton} onClick={()=>{nav('/mypage')}}>마이페이지</button>
           </div>
         </div>
       </header>
