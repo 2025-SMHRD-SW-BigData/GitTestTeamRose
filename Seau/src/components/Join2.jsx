@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { UserContext } from '../context/UserContext';
 
 const Join2 = () => {
     const [id, setId] = useState('')

@@ -1,11 +1,17 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { UserContext } from '../context/UserContext'
 
 const Login = () => {
     const [id, setId] = useState('')
     const [pw, setPw] = useState('')
     const nav = useNavigate()
+    const {userId} = useContext(UserContext);
+    const {isOauth} = useContext(UserContext);
+    const {setUserId} = useContext(UserContext);
+    const {setIsOauth} = useContext(UserContext);
+    console.log(userId,isOauth);
     
     // http://localhost:3001 서버로 요청
 
@@ -21,6 +27,9 @@ const Login = () => {
             .then((res) => {
                 if (res.data == '로그인 성공') {
                     console.log('로그인 성공: ', res.data)
+                    setUserId(id);
+                    setIsOauth(true);
+                    
                     nav('/home')
                 } else if(res.data=='로그인 실패'){
                     console.log('로그인 실패', res.data)
@@ -37,6 +46,7 @@ const Login = () => {
             <header style={styles.header}>
                 <div style={styles.headerContent}>
                     <h1 style={styles.logo}>Sea-U</h1>
+                    <span>로그인</span>
                 </div>
             </header>
             <form onSubmit={tryLogin}>

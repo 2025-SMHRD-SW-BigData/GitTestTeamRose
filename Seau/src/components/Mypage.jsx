@@ -1,13 +1,31 @@
-import React from 'react'
+import React, {useState, useContext} from 'react'
+import { UserContext } from '../context/UserContext';
+import {useNavigate} from 'react-router-dom'
 
 
 const Mypage = () => {
+    
+    const nav = useNavigate();
+    const {userId} = useContext(UserContext);
+    const {setUserId} = useContext(UserContext);
+    const {isOauth} = useContext(UserContext);
+    console.log(userId, isOauth)
+    const {setIsOauth} = useContext(UserContext);
+    const handleLogOut = () =>{
+        setIsOauth(false)
+        setUserId("");
+        console.log(isOauth)
+        nav('/')
+    }
+
     return (
         <div style={styles.container}>
             {/* 상단바 */}
             <header style={styles.header}>
                 <div style={styles.headerContent}>
                     <h1 style={styles.logo}>Sea-U</h1>
+                    <span>{userId}님의 My page </span>
+                    <button style={styles.headerButton} onClick={()=>{handleLogOut()}}>로그아웃</button>
                 </div>
             </header>
             <h1>회원정보 수정</h1>
@@ -19,7 +37,7 @@ const Mypage = () => {
             <li>MBTI</li>
             <li>취미</li>
             <li>사진</li>
-
+            
             <p>고객센터</p>
         </div>
     )

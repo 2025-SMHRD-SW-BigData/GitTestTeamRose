@@ -5,13 +5,15 @@ import Join from './components/Join'
 import Login from './components/Login'
 import Join2 from './components/Join2'
 import Mypage from './components/Mypage'
+import { UserContext } from './context/UserContext'
 
 
 function App() {
-  
+  const [isOauth, setIsOauth] = useState(false);
+  const [userId, setUserId] = useState('');
 
   return (
-    <>
+    <UserContext.Provider value = {{isOauth, setIsOauth, userId, setUserId}}>
       <Routes>
         <Route path='/home' element={<Home></Home>}></Route>
         <Route path='/join' element={<Join></Join>}></Route>
@@ -19,7 +21,7 @@ function App() {
         <Route path='/' element={<Login></Login>}></Route>
         <Route path='/mypage' element={<Mypage></Mypage>}></Route>
       </Routes>
-    </>
+    </UserContext.Provider>
   )
 }
 

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {useNavigate} from 'react-router-dom'
+import { UserContext } from '../context/UserContext';
 
 // Leaflet 아이콘 설정
 delete L.Icon.Default.prototype._getIconUrl;
@@ -110,14 +111,32 @@ function Home() {
     setMediaData(mockMediaData);
   };
 
+  const {userId} = useContext(UserContext);
+  const {setUserId} = useContext(UserContext);
+  const {isOauth} = useContext(UserContext);
+  const {setIsOauth} = useContext(UserContext);
+  console.log(userId, isOauth)
+  const handleLogButton = () => {
+    if (isOauth) {
+      setIsOauth(false);
+      setUserId("");
+      nav('/');
+    }
+    else {
+      nav('/');
+    }
+
+  }
+
   return (
     <div style={styles.container}>
       {/* 상단바 */}
       <header style={styles.header}>
         <div style={styles.headerContent}>
           <h1 style={styles.logo}>Sea-U</h1>
+          <span>{userId}님 환영합니다! </span>
           <div style={styles.headerButtons}>
-            <button style={styles.headerButton} onClick={()=>{nav('/')}}>로그인</button>
+            <button style={styles.headerButton} onClick={()=>{handleLogButton()}}>{isOauth?"로그아웃":"로그인"}</button>
             <button style={styles.headerButton} onClick={()=>{nav('/mypage')}}>마이페이지</button>
           </div>
         </div>
