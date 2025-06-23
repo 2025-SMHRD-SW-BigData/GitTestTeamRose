@@ -61,4 +61,29 @@ app.post('/login', (req,res) => {
     
 })
 
+app.post('/mypage', (req,res) => {
+    const {userId} = req.body;
+
+    let sql = 'select user_id, user_name, nickname, birth_date, gender, profile_image_url, introduce, prefer_type, manner_score from users where user_id_name = ?';
+    
+    console.log('마이페이지 정보 요청')
+    console.log(req.body);
+    
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [userId],(err,rows) => {
+        if(!err) {
+            const userData = rows[0];
+            console.log(userData,'유저데이터');
+            res.status(200).json({
+                success:true,
+                message:'마이페이지 정보 조회 성공',
+                data : userData
+            })
+        }
+        else {
+            console.log(err);
+        }
+    })
+})
+
 app.listen(3001)
