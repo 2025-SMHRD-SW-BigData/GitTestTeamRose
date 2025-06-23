@@ -1,46 +1,76 @@
-import React, {useState, useContext} from 'react'
+import React, { useState, useContext, useEffect } from 'react'
 import { UserContext } from '../context/UserContext';
-import {useNavigate} from 'react-router-dom'
-
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 const Mypage = () => {
-    
-    const nav = useNavigate();
-    const {userId} = useContext(UserContext);
-    const {setUserId} = useContext(UserContext);
-    const {isOauth} = useContext(UserContext);
-    console.log(userId, isOauth)
-    const {setIsOauth} = useContext(UserContext);
-    const handleLogOut = () =>{
-        setIsOauth(false)
-        setUserId("");
-        console.log(isOauth)
-        nav('/')
-    }
 
-    return (
-        <div style={styles.container}>
-            {/* 상단바 */}
-            <header style={styles.header}>
-                <div style={styles.headerContent}>
-                    <h1 style={styles.logo}>Sea-U</h1>
-                    <span>{isOauth?`${userId}님의 My page`:"로그인 해주세요"} </span>
-                    <button style={styles.headerButton} onClick={()=>{handleLogOut()}}>{isOauth?"로그아웃":"로그인"}</button>
-                </div>
-            </header>
-            <h1>회원정보 수정</h1>
-            <li>프로필 사진</li>
-            <li>닉네임</li>
-            <li>나이</li>
-            <li>성별</li>
-            <li>이용기록</li>
-            <li>MBTI</li>
-            <li>취미</li>
-            <li>사진</li>
-            
-            <p>고객센터</p>
+  const [userData, setUserData] = useState(null);
+
+  const nav = useNavigate();
+  const { userId } = useContext(UserContext);
+  const { setUserId } = useContext(UserContext);
+  const { isOauth } = useContext(UserContext);
+  const [profileUrl, setProfileUrl] = useState('');
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState('');
+  const [nick, setNick] = useState('');
+  const [phoneNumberm, setPhonNumber] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [preferType, setPreferType] = useState('');
+  const [mannerScore, setMannerScore] = useState(0);
+  console.log(userId, isOauth)
+
+  useEffect(() => {
+    console.log('통신요청')
+    axios
+      .post('http://localhost:3001/mypage', {
+        userId: userId
+        
+      })
+      .then((res) => {
+        console.log(res.data.data);
+        const result = res.data.data;
+        setUserData(result);
+        console.log(userData);
+      })
+
+  }, [userData?.gender])
+
+  const { setIsOauth } = useContext(UserContext);
+  const handleLogOut = () => {
+    setIsOauth(false)
+    setUserId("");
+    console.log(isOauth)
+    nav('/')
+  }
+
+  return (
+    
+    <div style={styles.container}>
+      {/* 상단바 */}
+      <header style={styles.header}>
+        <div style={styles.headerContent}>
+          <h1 style={styles.logo}>Sea-U</h1>
+          <span>{isOauth ? `${userId}님의 My page` : "로그인 해주세요"} </span>
+          <button style={styles.headerButton} onClick={() => { handleLogOut() }}>{isOauth ? "로그아웃" : "로그인"}</button>
         </div>
-    )
+      </header>
+      
+      <h1>회원정보 수정</h1>
+      <li>프로필 사진 : {userData?.profile_image_url}</li>
+      <li>닉네임 : {userData?.nickname}</li>
+      <li>나이 </li>
+      <li>성별 : {userData?.gender=='male'?'남자':'여자'}</li>
+      <li>MBTI</li>
+      <li>매너점수 : {userData?.manner_score}</li>
+      <li>자기소개 : {userData?.introduce}</li>
+      <li>사진</li>
+      <li>이용기록</li>
+
+      <p>고객센터</p>
+    </div>
+  )
 }
 
 const styles = {
