@@ -23,8 +23,8 @@ const Mypage = () => {
             <header style={styles.header}>
                 <div style={styles.headerContent}>
                     <h1 style={styles.logo}>Sea-U</h1>
-                    <span>{userId}님의 My page </span>
-                    <button style={styles.headerButton} onClick={()=>{handleLogOut()}}>로그아웃</button>
+                    <span>{isOauth?`${userId}님의 My page`:"로그인 해주세요"} </span>
+                    <button style={styles.headerButton} onClick={()=>{handleLogOut()}}>{isOauth?"로그아웃":"로그인"}</button>
                 </div>
             </header>
             <h1>회원정보 수정</h1>
