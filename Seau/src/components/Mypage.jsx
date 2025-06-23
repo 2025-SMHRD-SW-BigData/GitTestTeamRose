@@ -1,16 +1,15 @@
-import React, {useState, useContext} from 'react'
+import React, {useState, useContext, useEffect} from 'react'
 import { UserContext } from '../context/UserContext';
 import {useNavigate} from 'react-router-dom'
 
-
 const Mypage = () => {
-    
+
     const nav = useNavigate();
-    const {userId} = useContext(UserContext);
-    const {setUserId} = useContext(UserContext);
-    const {isOauth} = useContext(UserContext);
+    const {userId, setUserId, isOauth, setIsOauth} = useContext(UserContext);
     console.log(userId, isOauth)
-    const {setIsOauth} = useContext(UserContext);
+
+    
+
     const handleLogOut = () =>{
         setIsOauth(false)
         setUserId("");
