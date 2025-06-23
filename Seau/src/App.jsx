@@ -21,7 +21,7 @@ function App() {
         <Route path='/join' element={<Join></Join>}></Route>
         <Route path='/join2' element={<Join2></Join2>}></Route>
         <Route path='/' element={<Login></Login>}></Route>
-        <Route path='/mypage' element={<Mypage></Mypage>}></Route>
+        <Route path='/mypage' element={<Mypage ></Mypage>}></Route>
       </Routes>
     </UserContext.Provider>
   )
