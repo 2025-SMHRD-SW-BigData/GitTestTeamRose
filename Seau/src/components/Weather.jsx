@@ -1,68 +1,59 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import axios from 'axios'
 
-const Weather = ({ rawData }) => {
-    const [parsedData, setParsedData] = useState([])
-    const [loading, setLoading] = useState(true)
+const Weather = ({ lat, lon }) => {
+    const API_KEY = '191b0c3c6f87f1e34d944534b0a4a379'
+    const [weather, setWeather] = useState(null)
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
     useEffect(() => {
-        axios
-            .get('http://localhost:3001/weather')
-            .then((res) => {
-                console.log('기상청 응답:', res.data);
-                const rawText = res.data; // 문자열로 가정
-                const lines = rawText.trim().split('\n');
+        if (!lat || !lon) return;
 
-                // 숫자로 시작하는 줄만 필터링 (관측 데이터만)
-                const dataLines = lines.filter(line => /^\d{12}/.test(line));
-
-                const parsed = dataLines.map((line) => {
-                    const tokens = line.trim().split(/\s+/);
-
-                    return {
-                        time: tokens[0],        // 관측 시간
-                        stationId: tokens[1],   // 지점 ID
-                        temperature: tokens[7], // 기온 (TA)
-                        waterTemp: tokens[13],  // 수온 (TW)
-                    };
-                });
-
-                setParsedData(parsed);
+        const fetchWeather = async () => {
+            setLoading(true);
+            try {
+                const res = await axios.get(
+                    `https://api.openweathermap.org/data/2.5/weather`,
+                    {
+                        params: {
+                            lat,
+                            lon,
+                            appid: API_KEY,
+                            units: 'metric',
+                            lang: 'kr'
+                        }
+                    }
+                );
+                setWeather(res.data);
+            } catch (err) {
+                setError('날씨 정보를 불러오지 못했습니다.');
+            } finally {
                 setLoading(false);
-            })
-            .catch((err) => {
-                console.error('에러:', err);
-                setLoading(false);
-            });
-    }, []);
+            }
+        };
 
-    if (loading) {
-        return <div>날씨 정보 불러오는 중...</div>;
-    }
+        fetchWeather();
+    }, [lat, lon]);
+
+    if (loading) return <div>날씨 정보를 불러오는 중...</div>;
+    if (error) return <div>{error}</div>;
+    if (!weather) return null;
+
+
     return (
-        <div>
-            <h2>기상청 등표 관측 요약</h2>
-            <table border="1" cellPadding="8">
-                <thead>
-                    <tr>
-                        <th>관측시간</th>
-                        <th>지점 ID</th>
-                        <th>기온 (°C)</th>
-                        <th>수온 (°C)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {parsedData.map((row, index) => (
-                        <tr key={index}>
-                            <td>{row.time}</td>
-                            <td>{row.stationId}</td>
-                            <td>{row.temperature}</td>
-                            <td>{row.waterTemp === '-99.0' ? 'N/A' : row.waterTemp}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
+        <div className='weatherCard'>
+      <div className='temperature'>{weather.main.temp}°C</div>
+      <div className='condition'>{weather.weather[0].description}</div>
+      <div className='weatherDetails'>
+        <div>습도: {weather.main.humidity}%</div>
+        <div>풍속: {weather.wind.speed} m/s</div>
+      </div>
+      <div className='location'>
+        📍 {weather.name}
+      </div>
+    </div>
     )
-};
+}
 
 export default Weather

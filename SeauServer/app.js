@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const mysql = require('mysql2');
 
 const https = require('https')
 const iconv = require('iconv-lite'); // ✅ 추가
@@ -9,54 +10,60 @@ const cors = require('cors')
 app.use(cors())
 app.use(express.json())
 
+let conn = mysql.createConnection({
+    host: 'project-db-campus.smhrd.com',
+    port: 3307,
+    user : 'campus_25SW_BigData_p2_2',
+    password: 'smhrd2',
+    database : 'campus_25SW_BigData_p2_2'
+})
+
 // http://localhost:3001
 // 회원가입
 app.post('/', (req, res)=>{
-    const {id, pw, nick} = req.body
+    const {id, pw, nick, gender, name, birthDay, preferType,introduce, phoneNumber} = req.body
     console.log('접근 확인!')
-    console.log('회원가입 요청:', id, pw, nick)
-    if(id!='rose'){
-        res.send('회원가입 성공')
-    } else {
-        res.send('회원가입 실패')
-    }
+    let sql = 'insert into users(user_id_name, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce, prefer_type) values(?,?,?,?,?,?,?,?,?)';
+    
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [id, pw,name, phoneNumber,nick,birthDay,gender,introduce,preferType],(err,rows)=>{
+        if(!err) {
+            console.log('입력성공')
+            res.send("가입성공")
+        }
+        else {
+            console.log('입력실패')
+            console.log(err)
+            res.send('가입실패')
+        }
+    })
+    
 })
 
 // 로그인
-app.get('/weather', (req, res) => {
-  const apiUrl = 'https://apihub.kma.go.kr/api/typ01/url/kma_lhaws.php?stn=0&help=1&authKey=1pcsdTFmR52XLHUxZmedeA';
-  const urlObj = new URL(apiUrl);
-
-  const options = {
-    hostname: urlObj.hostname,
-    path: urlObj.pathname + urlObj.search,
-    port: 443,
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
-  const request = https.request(options, (apiRes) => {
-    let chunks = [];
-
-    apiRes.on('data', (chunk) => {
-      chunks.push(chunk); // Buffer 조각 수집
-    });
-
-    apiRes.on('end', () => {
-      const buffer = Buffer.concat(chunks); // 전체 응답을 하나로 결합
-      const decoded = iconv.decode(buffer, 'euc-kr'); // ✅ EUC-KR → UTF-8 디코딩
-      res.send(decoded);
-    });
-  });
-
-  request.on('error', (error) => {
-    console.error('API 요청 실패:', error.message);
-    res.status(500).json({ error: 'API 요청 실패', message: error.message });
-  });
-
-  request.end();
-});
+app.post('/login', (req,res) => {
+    const {id, pw} = req.body;
+    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    
+    console.log('로그인 요청')
+    console.log(req.body);
+    
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [id,pw],(err,rows) => {
+        if(!err) {
+            if(rows.length>0) {
+                res.send("인증성공")
+            }
+            else {
+                
+                res.send("인증실패")
+            }
+        }
+        else {
+            console.log(err);
+        }
+    })
+    
+})
 
 app.listen(3001)
