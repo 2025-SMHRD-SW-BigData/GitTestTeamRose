@@ -7,6 +7,13 @@ const Join = () => {
     const [id, setId] = useState('')
     const [pw, setPw] = useState('')
     const [nick, setNick] = useState('')
+    const [gender, setGender] = useState('')
+    const [name, setName] = useState('')
+    const [birthDay, setBirthDay] = useState('')
+    const [preferType, setPreferType] = useState('')
+    const [introduce, setIntroduce]=useState('')
+    const [phoneNumber, setPhonNumber] = useState('')
+    
     const nav = useNavigate()
     
     // http://localhost:3001 서버로 요청
@@ -19,13 +26,19 @@ const Join = () => {
             .post('http://localhost:3001', {
                 id : id,
                 pw: pw,
-                nick: nick
+                nick: nick,
+                gender: gender,
+                name : name,
+                birthDay: birthDay,
+                preferType : preferType,
+                introduce : introduce,
+                phoneNumber : phoneNumber
             })
             .then((res)=>{
-                if(res.data=='회원가입 성공'){
+                if(res.data=='가입성공'){
                     console.log('회원가입 성공: ', res.data)
                     nav('/')
-                } else if(res.data=='회원가입 실패'){
+                } else if(res.data=='가입실패'){
                     console.log('회원가입 실패', res.data)
                 }
             })
@@ -48,7 +61,24 @@ const Join = () => {
                 <br />
                 PW : <input type='password' value={pw} onChange={(e)=>setPw(e.target.value)} placeholder='PW를 입력하세요' />
                 <br />
-                NICK : <input type='text' value={nick} onChange={(e)=>setNick(e.target.value)} placeholder='닉네임을 입력하세요' />
+                닉네임 : <input type='text' value={nick} onChange={(e)=>setNick(e.target.value)} placeholder='닉네임을 입력하세요' />
+                <br />
+                성별 : <select value={gender} onChange={(e) => setGender(e.target.value)} // setGender를 사용하여 상태 업데이트
+                > <option value="">선택</option><option value="male">남자</option><option value="female">여자</option>
+                </select>
+                <br />
+                이름 : <input type='text' value={name} onChange={(e)=>setName(e.target.value)} placeholder='이름을 입력하세요'></input>
+                <br />
+                생년월일 : <input type='date' value = {birthDay} onChange={(e)=>setBirthDay(e.target.value)}></input>
+                <br />
+                전화번호 : <input type='text' value={phoneNumber} onChange={(e)=>setPhonNumber(e.target.value)} placeholder='이름을 입력하세요'></input>
+                <br />
+                선호활동타입 : <select value={preferType} onChange={(e) => setPreferType(e.target.value)} // setPreferType를사용하여 선호타입설정
+                > <option value="">선택</option><option value="marine">해양</option><option value="outdoor">야외활동</option><option value="watersports">수상스포츠</option>
+                <option value="etc">기타</option>
+                </select>
+                <br />
+                자기소개 : <input type='text' value={introduce} onChange={(e)=>setIntroduce(e.target.value)} placeholder='간단한 소개말을 적어주세요'></input>
                 <br />
                 <button style={styles.headerButton} type='submit'>회원가입</button>
                 <button style={styles.headerButton} type='button' onClick={() => { nav('/') }}>로그인</button>
