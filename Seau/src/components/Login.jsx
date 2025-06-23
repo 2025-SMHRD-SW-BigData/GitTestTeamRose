@@ -25,13 +25,13 @@ const Login = () => {
                 pw: pw,
             })
             .then((res) => {
-                if (res.data == '로그인 성공') {
+                if (res.data == '인증성공') {
                     console.log('로그인 성공: ', res.data)
                     setUserId(id);
                     setIsOauth(true);
                     
-                    nav('/home')
-                } else if(res.data=='로그인 실패'){
+                    nav('/home1')
+                } else if(res.data=='인증실패'){
                     console.log('로그인 실패', res.data)
                 }
             })
@@ -68,6 +68,8 @@ const styles = {
     height: '100vh',
     width: '100vw',
     position: 'relative',
+    top:'200px',
+    left:'400px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {

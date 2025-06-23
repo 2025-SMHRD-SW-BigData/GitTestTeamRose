@@ -7,6 +7,7 @@ import Join2 from './components/Join2'
 import Mypage from './components/Mypage'
 import Home1 from './components/Home1'
 import { UserContext } from './context/UserContext'
+import Weather from './components/Weather'
 
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
   return (
     <UserContext.Provider value = {{isOauth, setIsOauth, userId, setUserId}}>
       <Routes>
+        <Route path='/weather' element={<Weather></Weather>}></Route>
         <Route path='/home' element={<Home></Home>}></Route>
         <Route path='/home1' element={<Home1></Home1>}></Route>
         <Route path='/join' element={<Join></Join>}></Route>
