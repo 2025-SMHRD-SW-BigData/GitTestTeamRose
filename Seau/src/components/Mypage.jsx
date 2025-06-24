@@ -1,11 +1,27 @@
 import React, {useState, useContext, useEffect} from 'react'
 import { UserContext } from '../context/UserContext';
 import {useNavigate} from 'react-router-dom'
+import axios from 'axios';
 
-const Mypage = ({ isOauth = true, userId = '홍길동', handleLogOut }) => {
+const Mypage = () => {
+  const [userData, setUserData] = useState(null);
+
+  const nav = useNavigate();
+  const { userId } = useContext(UserContext);
+  const { setUserId } = useContext(UserContext);
+  const { isOauth } = useContext(UserContext);
+  const [profileUrl, setProfileUrl] = useState('');
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState('');
+  const [nick, setNick] = useState('');
+  const [phoneNumberm, setPhonNumber] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+  const [preferType, setPreferType] = useState('');
+  const [mannerScore, setMannerScore] = useState(0);
+  console.log(userId, isOauth)
+
   const [nickname, setNickname] = useState('');
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
   const [mbti, setMbti] = useState('');
   const [phone, setPhone] = useState('');
   const [intro, setIntro] = useState('');
@@ -20,6 +36,31 @@ const Mypage = ({ isOauth = true, userId = '홍길동', handleLogOut }) => {
   const handleSubmit = () => {
     alert('저장 완료!');
   };
+  
+  useEffect(() => {
+    console.log('통신요청')
+    axios
+      .post('http://localhost:3001/mypage', {
+        userId: userId
+        
+      })
+      .then((res) => {
+        console.log(res.data.data);
+        const result = res.data.data;
+        setUserData(result);
+        console.log(userData);
+      })
+
+  }, [userData?.gender])
+
+  const { setIsOauth } = useContext(UserContext);
+  const handleLogOut = () => {
+    setIsOauth(false)
+    setUserId("");
+    console.log(isOauth)
+    nav('/')
+  }
+
 
   return (
     <div style={styles.page}>
@@ -46,11 +87,11 @@ const Mypage = ({ isOauth = true, userId = '홍길동', handleLogOut }) => {
               style={styles.profileImageXLarge}
             />
             <div style={styles.cardInfoTextBox}>
-              <p style={styles.infoText}><strong>닉네임:</strong> {nickname || '미입력'}</p>
-              <p style={styles.infoText}><strong>MBTI:</strong> {mbti || '미입력'}</p>
+              <p style={styles.infoText}><strong>닉네임:</strong> {userData?.nickname || '미입력'}</p>
+              <p style={styles.infoText}><strong>MBTI:</strong> {userData?.mbti || '미입력'}</p>
               <p style={styles.infoText}><strong>나이:</strong> {age || '미입력'}</p>
-              <p style={styles.infoText}><strong>성별:</strong> {gender || '미입력'}</p>
-              <p style={styles.infoText}><strong>소개:</strong> {intro || '미입력'}</p>
+              <p style={styles.infoText}><strong>성별:</strong> {userData?.gender=="male"?'남자':'여자' || '미입력'}</p>
+              <p style={styles.infoText}><strong>소개:</strong> {userData?.introduce || '미입력'}</p>
             </div>
           </section>
 

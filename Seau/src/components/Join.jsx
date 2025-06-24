@@ -13,6 +13,7 @@ const Join = () => {
     const [preferType, setPreferType] = useState('')
     const [introduce, setIntroduce]=useState('')
     const [phoneNumber, setPhonNumber] = useState('')
+    const [mbti, setMbti] = useState('')
     
     const nav = useNavigate()
     
@@ -32,6 +33,7 @@ const Join = () => {
                 birthDay: birthDay,
                 preferType : preferType,
                 introduce : introduce,
+                mbti : mbti,
                 phoneNumber : phoneNumber
             })
             .then((res)=>{
@@ -79,6 +81,8 @@ const Join = () => {
                 </select>
                 <br />
                 자기소개 : <input type='text' value={introduce} onChange={(e)=>setIntroduce(e.target.value)} placeholder='간단한 소개말을 적어주세요'></input>
+                <br />
+                mbti : <input type='text' value={mbti} onChange={(e)=>setMbti(e.target.value)} placeholder='mbti를 적어주세요'></input>
                 <br />
                 <button style={styles.headerButton} type='submit'>회원가입</button>
                 <button style={styles.headerButton} type='button' onClick={() => { nav('/') }}>로그인</button>
