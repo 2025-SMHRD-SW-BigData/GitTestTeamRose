@@ -57,8 +57,7 @@ const Login = () => {
                 <br />
                 <button style={styles.headerButton} type='submit'>로그인</button>   
                 <button style={styles.headerButton} onClick={()=>{nav('/join')}}>회원가입</button>             
-            </form>
-            
+            </form>            
         </div>
     )
 }

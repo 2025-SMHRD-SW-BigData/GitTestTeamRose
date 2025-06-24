@@ -10,7 +10,6 @@ const Join = () => {
     const [gender, setGender] = useState('')
     const [name, setName] = useState('')
     const [birthDay, setBirthDay] = useState('')
-    const [preferType, setPreferType] = useState('')
     const [introduce, setIntroduce]=useState('')
     const [phoneNumber, setPhonNumber] = useState('')
     const [mbti, setMbti] = useState('')
@@ -31,7 +30,6 @@ const Join = () => {
                 gender: gender,
                 name : name,
                 birthDay: birthDay,
-                preferType : preferType,
                 introduce : introduce,
                 mbti : mbti,
                 phoneNumber : phoneNumber
@@ -74,11 +72,6 @@ const Join = () => {
                 생년월일 : <input type='date' value = {birthDay} onChange={(e)=>setBirthDay(e.target.value)}></input>
                 <br />
                 전화번호 : <input type='text' value={phoneNumber} onChange={(e)=>setPhonNumber(e.target.value)} placeholder='이름을 입력하세요'></input>
-                <br />
-                선호활동타입 : <select value={preferType} onChange={(e) => setPreferType(e.target.value)} // setPreferType를사용하여 선호타입설정
-                > <option value="">선택</option><option value="marine">해양</option><option value="outdoor">야외활동</option><option value="watersports">수상스포츠</option>
-                <option value="etc">기타</option>
-                </select>
                 <br />
                 자기소개 : <input type='text' value={introduce} onChange={(e)=>setIntroduce(e.target.value)} placeholder='간단한 소개말을 적어주세요'></input>
                 <br />
