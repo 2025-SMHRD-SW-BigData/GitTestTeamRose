@@ -87,11 +87,11 @@ const Mypage = () => {
               style={styles.profileImageXLarge}
             />
             <div style={styles.cardInfoTextBox}>
-              <p style={styles.infoText}><strong>닉네임:</strong> {nickname || '미입력'}</p>
-              <p style={styles.infoText}><strong>MBTI:</strong> {mbti || '미입력'}</p>
+              <p style={styles.infoText}><strong>닉네임:</strong> {userData?.nickname || '미입력'}</p>
+              <p style={styles.infoText}><strong>MBTI:</strong> {userData?.mbti || '미입력'}</p>
               <p style={styles.infoText}><strong>나이:</strong> {age || '미입력'}</p>
-              <p style={styles.infoText}><strong>성별:</strong> {gender || '미입력'}</p>
-              <p style={styles.infoText}><strong>소개:</strong> {intro || '미입력'}</p>
+              <p style={styles.infoText}><strong>성별:</strong> {userData?.gender=="male"?'남자':'여자' || '미입력'}</p>
+              <p style={styles.infoText}><strong>소개:</strong> {userData?.introduce || '미입력'}</p>
             </div>
           </section>
 
