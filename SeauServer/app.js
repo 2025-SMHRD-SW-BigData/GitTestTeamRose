@@ -2,6 +2,9 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2');
 
+const https = require('https')
+const iconv = require('iconv-lite'); // ✅ 추가
+
 // node에서 react로 응답 보내기 위해 cors설정
 const cors = require('cors')
 app.use(cors())
@@ -16,6 +19,7 @@ let conn = mysql.createConnection({
 })
 
 // http://localhost:3001
+// 회원가입
 app.post('/', (req, res)=>{
     const {id, pw, nick, gender, name, birthDay, preferType,introduce, phoneNumber} = req.body
     console.log('접근 확인!')
@@ -36,6 +40,7 @@ app.post('/', (req, res)=>{
     
 })
 
+// 로그인
 app.post('/login', (req,res) => {
     const {id, pw} = req.body;
     let sql = 'select * from users where user_id_name = ? and user_pw = ?';

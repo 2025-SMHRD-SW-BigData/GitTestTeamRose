@@ -30,7 +30,7 @@ const Login = () => {
                     setUserId(id);
                     setIsOauth(true);
                     
-                    nav('/home')
+                    nav('/home1')
                 } else if(res.data=='인증실패'){
                     console.log('로그인 실패', res.data)
                 }
