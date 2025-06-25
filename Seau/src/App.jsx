@@ -10,6 +10,7 @@ import { UserContext } from './context/UserContext'
 import Weather from './components/Weather'
 import { Navigation } from "./components/Navigation"
 import { AuthSidebar } from "./components/AuthSiderbar"
+import {useNavigate} from 'react-router-dom'
 import './App.css'
 
 
@@ -24,6 +25,7 @@ function App() {
     console.log(mode)
     setSidebarOpen(true)
   }
+  const nav = useNavigate();
 
   const closeSidebar = () => {
     setSidebarOpen(false)
@@ -32,7 +34,26 @@ function App() {
   return (
     <UserContext.Provider value={{ isOauth, setIsOauth, userId, setUserId }}>
       {/* 네비게이션 */}
-      <Navigation onLoginClick={() => openSidebar("login")} onSignupClick={() => openSidebar("signup")} />
+      <Navigation
+        onLoginClick={() => {
+          if (isOauth) {
+            setIsOauth(false)
+            nav('/');
+          }
+          else {
+            openSidebar("login")
+          }
+
+        }}
+        onSignupClick={() => {
+          if (isOauth) {
+            nav('/mypage');
+          }
+          else {
+            openSidebar("signup")
+          }
+        }}
+      />
       <Routes>
         <Route path='/weather' element={<Weather></Weather>}></Route>
         <Route path='/home' element={<Home></Home>}></Route>

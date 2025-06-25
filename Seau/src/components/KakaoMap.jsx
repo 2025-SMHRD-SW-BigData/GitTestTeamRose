@@ -3,12 +3,20 @@ import React, { useEffect, useState } from 'react'
 import { Map, MapMarker } from 'react-kakao-maps-sdk'
 import useKakaoLoader from './useKaKaoLoader'
 import axios from 'axios'
+import getDistance from './getDistance'
 
-const KakaoMap = ({ selectedLocation, onLocationSelect }) => {
+const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange }) => {
     // Kakao SDK 로드 완료 여부 받기
     const isKakaoLoaded = useKakaoLoader()
-    const [selectedMarker, setSelectedMarker] = useState(null)
+    const [placeMarkerList, setPlaceMarkerList] = useState([])
+    const [nearbyMarkers, setNearbyMarkers] = useState([])
     const [markerList, setMarkerList] = useState([])
+
+    const tourList = [
+        { name: '어울림감귤체험농장', address: '제주특별자치도 서귀포시 성산읍 서성일로 809' },
+        { name: '선경감귤체험농장', address: '제주특별자치도 서귀포시 표선면 일주동로 6214' },
+        { name: '제주왕감귤체험농장', address: '제주특별자치도 서귀포시 남원읍 남위남성로 10-14' }
+    ]
 
     // 주소 → 위경도 변환 함수
     const geocodeAddress = (address) => {
@@ -58,15 +66,49 @@ const KakaoMap = ({ selectedLocation, onLocationSelect }) => {
                 )
 
                 setMarkerList(geocoded.filter(Boolean)) // 실패한 건 제거
+
+                const geocodeTours = await Promise.all(
+                    tourList.map(async (place) => {
+                        try {
+                            const coords = await geocodeAddress(place.address)
+                            return {
+                                ...coords,
+                                name: place.name,
+                                image: null
+                            }
+                        } catch (e) {
+                            console.log('Place 지오코딩 실패', e.message)
+                            return null
+                        }
+                    })
+                )
+                setPlaceMarkerList(geocodeTours.filter(Boolean))
             } catch (err) {
                 console.error('해변 데이터 불러오기 실패:', err)
             }
         }
 
+
         fetchAndGeocode()
     }, [isKakaoLoaded])
 
+    useEffect(()=>{
+        if(!selectedLocation || placeMarkerList.length === 0) return
 
+        const nearby = placeMarkerList.filter((place)=>{
+            const dist = getDistance(
+                selectedLocation.lat,
+                selectedLocation.lng,
+                place.lat,
+                place.lng
+            )
+            return dist < 10 // 10km 이내만 표시
+        })
+        setNearbyMarkers(nearby)
+        if (onNearbyMarkersChange){
+            onNearbyMarkersChange(nearby)
+        }
+    },[selectedLocation, placeMarkerList])
 
     const handleMapClick = (_map, mouseEvent) => {
         const lat = mouseEvent.latLng.getLat()
@@ -78,16 +120,27 @@ const KakaoMap = ({ selectedLocation, onLocationSelect }) => {
         <Map
             center={{ lat: 33.36167, lng: 126.52917 }}
             className='map'
-            level={9}
+            level={10}
             onClick={handleMapClick}
         >
-            {/*  */}
+            {/* beach 마커 */}
             {markerList.map((marker, idx) => (
                 <MapMarker
                     key={idx}
                     position={{ lat: marker.lat, lng: marker.lng }}
-                    onClick={()=>onLocationSelect({lat:marker.lat, lng:marker.lng}, marker.image)}>
+                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}>
                     <div>{marker.name}</div>
+                </MapMarker>
+            ))}
+
+            {/* 주변 관광장소 마커 */}
+            {nearbyMarkers.map((marker, idx) => (
+                <MapMarker
+                    key={idx}
+                    position={{ lat: marker.lat, lng: marker.lng }}
+                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}
+                >
+                    <div style={{ color: 'orange' }}>{marker.name}</div>
                 </MapMarker>
             ))}
 
