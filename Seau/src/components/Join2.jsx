@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { User, Mail, Lock } from "lucide-react";
 import axios from "axios";
+import { UserContext } from '../context/UserContext'
 
 export default function Join({ formData, onChange }) {
   const [loading, setLoading] = useState(false);
