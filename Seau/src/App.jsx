@@ -4,6 +4,7 @@ import Home from './components/Home'
 import Join from './components/Join'
 import Login from './components/Login'
 import Mypage from './components/Mypage'
+import Mypage2 from './components/Mypage2'
 import Home1 from './components/Home1'
 import { UserContext } from './context/UserContext'
 import Weather from './components/Weather'
@@ -41,6 +42,7 @@ function App() {
         <Route path='/join2' element={<Join2></Join2>}></Route>
         <Route path='/login' element={<Login onLoginClick={openSidebar}></Login>}></Route>
         <Route path='/mypage' element={<Mypage ></Mypage>}></Route>
+        <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
         <Route path='/' element={<AuthSidebar isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
       </Routes>
 
