@@ -9,6 +9,7 @@ import { UserContext } from './context/UserContext'
 import Weather from './components/Weather'
 import { Navigation } from "./components/Navigation"
 import { AuthSidebar } from "./components/AuthSiderbar"
+import Join2 from './components/Join2'
 import './App.css'
 
 

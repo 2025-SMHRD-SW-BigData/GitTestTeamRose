@@ -3,6 +3,7 @@ import { UserContext } from '../context/UserContext'
 import { useNavigate } from 'react-router-dom'
 import Weather from './Weather'
 import KakaoMap from './KakaoMap'
+import getDistance from './getDistance'
 import '../style/Seau.css'
 
 const Home1 = () => {
@@ -15,9 +16,7 @@ const Home1 = () => {
   const [rightPanelOpen, setRightPanelOpen] = useState(false);
   const nav = useNavigate()
   const { userId, setUserId, isOauth, setIsOauth } = useContext(UserContext);
-
-
-
+  const [nearbyAttractions, setNearbyAttractions] = useState([])
 
   // 위치 선택 시 데이터 로드
   const handleLocationSelect = async (location, imageUrl) => {
@@ -30,10 +29,10 @@ const Home1 = () => {
       // 레저 데이터 가져오기
       await fetchLeisureData(location);
       // 미디어 데이터 가져오기
-      if (imageUrl){
+      if (imageUrl) {
         setMediaData({
-          images : [imageUrl],
-          videos:[]
+          images: [imageUrl],
+          videos: []
         })
       } else {
         await fetchMediaData(location);
@@ -44,6 +43,11 @@ const Home1 = () => {
       setLoading(false);
     }
   }
+
+  // KakaoMap에서 근처 관광지 목록 받기
+  const handleNearbyMarkersChange = (nearby) => {
+    setNearbyAttractions(nearby);
+  };
 
   // 레저 정보 데이터 (Mock)
   const fetchLeisureData = async (location) => {
@@ -114,6 +118,7 @@ const Home1 = () => {
         <KakaoMap
           selectedLocation={selectedLocation}
           onLocationSelect={handleLocationSelect}
+          onNearbyMarkersChange={handleNearbyMarkersChange}
         />
       </div>
 
@@ -131,50 +136,39 @@ const Home1 = () => {
 
         {loading ? (
           <div className='loading'>로딩 중...</div>
-        ) : leisureData ? (
-          <div className='panelContent'>
-            <div className='section'>
-              <h4>🏛️ 관광지</h4>
-              {leisureData.attractions.map((item, index) => (
-                <div key={index} className='item'>
-                  <div className='itemName'>{item.name}</div>
-                  <div className='itemInfo'>
-                    거리: {item.distance} | ⭐ {item.rating}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className='section'>
-              <h4>🍽️ 맛집</h4>
-              {leisureData.restaurants.map((item, index) => (
-                <div key={index} className='item'>
-                  <div className='itemName'>{item.name}</div>
-                  <div className='itemInfo'>
-                    {item.cuisine} | ⭐ {item.rating}
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className='section'>
-              <h4>🎪 액티비티</h4>
-              {leisureData.activities.map((item, index) => (
-                <div key={index} className='item'>
-                  <div className='itemName'>{item.name}</div>
-                  <div className='itemInfo'>
-                    {item.type} | {item.price}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
         ) : (
-          <div className='placeholder'>
-            지도에서 위치를 선택해주세요
+          <div className='panelContent'>
+
+            {leisureData ? (
+              <>
+                <div className='section'>
+                  <h4>🏛️ 주변 관광지</h4>
+                  {nearbyAttractions.length > 0 ? (
+                    nearbyAttractions.map((place, idx) => (
+                      <div key={idx} className='item'>
+                        <div className='itemName'>{place.name}</div>
+                        {/* 거리 계산 (km 단위로 소수점 2자리까지) */}
+                        <div className='itemInfo'>
+                          거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div>근처에 관광지가 없습니다.</div>
+                  )}
+                </div>
+
+                {/* ... 맛집, 액티비티 섹션 ... */}
+              </>
+            ) : (
+              <div className='placeholder'>
+                지도에서 위치를 선택해주세요
+              </div>
+            )}
           </div>
         )}
       </div>
+
 
       {/* 우측 사이드바 - 날씨 + 미디어 */}
       <div className='rightPanel' style={{ transform: rightPanelOpen ? 'translateX(0)' : 'translateX(100%)' }}>
