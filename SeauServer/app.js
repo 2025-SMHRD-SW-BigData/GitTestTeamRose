@@ -2,9 +2,11 @@ const express = require('express');
 const app = express();
 const mysql = require('mysql2');
 const path = require('path')
-
+const fetch = require('node-fetch'); // API 호출을 위해 사용
 const https = require('https')
 const iconv = require('iconv-lite'); // ✅ 추가
+const KAKAO_REST_API_KEY = '30382bad8e7221eb3b4c8f89fcd78114'; 
+
 
 // node에서 react로 응답 보내기 위해 cors설정
 const cors = require('cors')
@@ -106,5 +108,51 @@ app.get('/place/beach', (req,res)=>{
         }
     })
 })
+
+app.post('/place/add', async (req, res) => {
+    const { placeName, description, address, mainImageUrl, placeType, operationHours } = req.body;
+    console.log('새로운 장소 추가 요청:', req.body);
+
+    let latitude = null;
+    let longitude = null;
+
+    try {
+        // Kakao Local API (주소 검색)를 사용하여 위도, 경도 가져오기
+        const kakaoApiUrl = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`;
+        const response = await fetch(kakaoApiUrl, {
+            headers: {
+                'Authorization': `KakaoAK ${KAKAO_REST_API_KEY}`
+            }
+        });
+        const data = await response.json();
+
+        if (data.documents && data.documents.length > 0) {
+            latitude = data.documents[0].y; // 위도 (latitude)
+            longitude = data.documents[0].x; // 경도 (longitude)
+            console.log(`주소 "${address}"에 대한 위도: ${latitude}, 경도: ${longitude} 검색 성공 (카카오맵 API)`);
+        } else {
+            console.warn(`주소 "${address}"에 대한 위도, 경도를 찾을 수 없습니다. (카카오맵 API 응답:`, data);
+        }
+    } catch (error) {
+        console.error('카카오맵 API 호출 중 오류 발생:', error);
+    }
+
+    // 데이터베이스에 장소 정보 저장
+    const sql = `
+        INSERT INTO place (place_name, description, address, latitude, longitude, main_image_url, place_type, operating_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const values = [placeName, description, address, latitude, longitude, mainImageUrl, placeType, operationHours];
+
+    conn.query(sql, values, (err, result) => {
+        if (!err) {
+            console.log('장소 정보 데이터베이스에 성공적으로 추가됨:', result);
+            res.status(201).json({ success: true, message: '장소 정보가 성공적으로 추가되었습니다.', placeId: result.insertId });
+        } else {
+            console.error('데이터베이스에 장소 정보 추가 실패:', err);
+            res.status(500).json({ success: false, message: '서버 오류로 인해 장소 정보 추가에 실패했습니다.' });
+        }
+    });
+});
 
 app.listen(3001)
