@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useContext } from 'react'
 import { UserContext } from '../context/UserContext'
-import { Map, MapMarker } from 'react-kakao-maps-sdk'
-import useKakaoLoader from "./useKaKaoLoader"
 import { useNavigate } from 'react-router-dom'
 import Weather from './Weather'
+import KakaoMap from './KakaoMap'
 import '../style/Seau.css'
 
 const Home1 = () => {
@@ -17,14 +16,11 @@ const Home1 = () => {
   const nav = useNavigate()
   const { userId, setUserId, isOauth, setIsOauth } = useContext(UserContext);
 
-  // Kakao SDK 로드
-  useKakaoLoader()
-
 
 
 
   // 위치 선택 시 데이터 로드
-  const handleLocationSelect = async (location) => {
+  const handleLocationSelect = async (location, imageUrl) => {
     setSelectedLocation(location);
     setLoading(true);
     setLeftPanelOpen(true);
@@ -34,7 +30,14 @@ const Home1 = () => {
       // 레저 데이터 가져오기
       await fetchLeisureData(location);
       // 미디어 데이터 가져오기
-      await fetchMediaData(location);
+      if (imageUrl){
+        setMediaData({
+          images : [imageUrl],
+          videos:[]
+        })
+      } else {
+        await fetchMediaData(location);
+      }
     } catch (error) {
       console.error('데이터 로드 중 오류:', error);
     } finally {
@@ -78,7 +81,7 @@ const Home1 = () => {
     };
     setMediaData(mockMediaData);
   };
- 
+
   console.log(userId, isOauth)
   const handleLogButton = () => {
     if (isOauth) {
@@ -108,26 +111,10 @@ const Home1 = () => {
 
       {/* 지도 */}
       <div className='mapContainer'>
-        <Map
-          center={{ lat: 33.36167, lng: 126.52917 }}
-          className='map'
-          level={9}
-          onClick={(map, MouseEvent) => {
-            const lat = MouseEvent.latLng.getLat()
-            const lng = MouseEvent.latLng.getLng()
-            handleLocationSelect({ lat, lng })
-          }}
-        >
-          {selectedLocation && (
-            <MapMarker position={{ lat: selectedLocation.lat, lng: selectedLocation.lng }}>
-              {/* <div style={{ padding: '5px', fontSize: '12px' }}>
-              선택된 위치<br />
-              위도 : {selectedLocation.lat.toFixed(4)}<br />
-              경도 : {selectedLocation.lng.toFixed(4)}
-            </div> */}
-            </MapMarker>
-          )}
-        </Map>
+        <KakaoMap
+          selectedLocation={selectedLocation}
+          onLocationSelect={handleLocationSelect}
+        />
       </div>
 
       {/* 좌측 사이드바 - 레저 정보 */}
