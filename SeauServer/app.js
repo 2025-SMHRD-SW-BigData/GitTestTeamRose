@@ -1,6 +1,7 @@
 const express = require('express');
 const app = express();
 const mysql = require('mysql2');
+const path = require('path')
 
 const https = require('https')
 const iconv = require('iconv-lite'); // ✅ 추가
@@ -86,6 +87,21 @@ app.post('/mypage', (req,res) => {
             })
         }
         else {
+            console.log(err);
+        }
+    })
+})
+
+app.get('/place/beach', (req,res)=>{
+    let sql = `select place_name, address, main_image_url from place where place_type = '해수욕장'`
+    conn.connect();
+    conn.query(sql, (err, rows)=>{
+        if(!err){
+            // console.log(rows)
+            res.status(200).json({
+                beach : rows
+            })
+        } else {
             console.log(err);
         }
     })
