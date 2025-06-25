@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button, Card, CardContent, CardHeader, Typography, Box } from "@mui/material";
 import { X } from "lucide-react";
 import Login2 from "./Login2";
 import Join2 from "./Join2";
+import { UserContext } from '../context/UserContext';
 
 export function AuthSidebar({ isOpen, onClose, initialMode }) {
   const [mode, setMode] = useState(initialMode || "login");
-
+  const {isOauth} = useContext(UserContext);
   useEffect(() => {
     setMode(initialMode || "login");
   }, [initialMode]);

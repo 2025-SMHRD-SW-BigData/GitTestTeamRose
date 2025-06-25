@@ -1,9 +1,14 @@
 import { motion } from "framer-motion";
 import { AppBar, Toolbar, Typography, Button, Box, Container } from "@mui/material";
 import { User, UserPlus } from "lucide-react";
+import { UserContext } from '../context/UserContext'
+import { useContext } from "react";
 
 export function Navigation({ onLoginClick, onSignupClick }) {
+  const {isOauth} = useContext(UserContext);
+  console.log(isOauth);
   return (
+    
     <motion.div
     //   initial={{ y: -100 }}
       animate={{ y: 0 }}
@@ -48,7 +53,8 @@ export function Navigation({ onLoginClick, onSignupClick }) {
                     fontSize: 14,
                   }}
                 >
-                  로그인
+                  
+                  {isOauth?'로그아웃':'로그인'}
                 </Button>
               </motion.div>
 
@@ -67,13 +73,14 @@ export function Navigation({ onLoginClick, onSignupClick }) {
                     },
                   }}
                 >
-                  회원가입
+                  {isOauth?'마이페이지':'회원가입'}
                 </Button>
               </motion.div>
             </Box>
           </Toolbar>
         </Container>
       </AppBar>
+      console.log(isOauth)
     </motion.div>
   );
 }
