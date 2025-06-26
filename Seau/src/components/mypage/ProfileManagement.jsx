@@ -1,4 +1,3 @@
-/** @jsxImportSource @emotion/react */
 import React, { useState, useRef } from 'react';
 import styled from '@emotion/styled';
 import { Edit, Save, X, Camera } from 'lucide-react';

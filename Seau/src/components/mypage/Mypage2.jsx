@@ -1,4 +1,3 @@
-/** @jsxImportSource @emotion/react */
 import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { ProfileManagement } from './ProfileManagement';
