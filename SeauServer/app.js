@@ -109,6 +109,21 @@ app.get('/place/beach', (req,res)=>{
     })
 })
 
+app.get('/place/tour', (req,res)=>{
+    let sql = `select place_name, latitude, longitude, description, main_image_url, operating_time, phone_number, place_type from place where place_type in('관광지', '맛집', '레저')`
+    conn.connect();
+    conn.query(sql, (err, rows)=>{
+        if(!err){
+            // console.log(rows)
+            res.status(200).json({
+                tour : rows
+            })
+        } else {
+            console.log(err)
+        }
+    })
+})
+
 app.post('/place/add', async (req, res) => {
     const { placeName, description, address, mainImageUrl, placeType, operationHours, phone_number } = req.body;
     console.log('새로운 장소 추가 요청:', req.body);
