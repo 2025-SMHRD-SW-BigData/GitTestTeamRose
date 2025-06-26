@@ -4,7 +4,7 @@ import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import {useNavigate} from 'react-router-dom'
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 
 // Leaflet 아이콘 설정
 delete L.Icon.Default.prototype._getIconUrl;

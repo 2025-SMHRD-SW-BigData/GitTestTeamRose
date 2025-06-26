@@ -10,6 +10,7 @@ const Placeadd = () => {
     const [mainImageUrl, setMainImageUrl] = useState('');
     const [placeType, setPlaceType] = useState('');
     const [operationHours, setOperationHours] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState(''); // ✨ 새로 추가된 연락처 상태 변수
     const [message, setMessage] = useState(''); // 사용자에게 메시지를 보여주기 위한 상태
 
     // 폼 제출 핸들러
@@ -20,7 +21,6 @@ const Placeadd = () => {
 
         try {
             // axios를 사용하여 Node.js 서버의 /place/add 엔드포인트로 데이터 전송
-            // axios는 기본적으로 JSON 데이터를 자동으로 처리하므로, JSON.stringify가 필요 없습니다.
             const response = await axios.post('http://localhost:3001/place/add', {
                 placeName,
                 description,
@@ -28,6 +28,7 @@ const Placeadd = () => {
                 mainImageUrl,
                 placeType,
                 operationHours,
+                phone_number: phoneNumber, // ✨ phone_number 필드 추가
             });
 
             const data = response.data; // axios는 응답 데이터를 response.data에 넣어줍니다.
@@ -42,25 +43,21 @@ const Placeadd = () => {
                 setMainImageUrl('');
                 setPlaceType('');
                 setOperationHours('');
+                setPhoneNumber(''); // ✨ 연락처 필드 초기화
             } else {
                 setMessage(`실패: ${data.message || '알 수 없는 오류 발생'}`);
             }
         } catch (error) {
             console.error('서버와 통신 중 오류 발생:', error);
-            // axios 오류 객체는 error.response (서버 응답), error.request (요청 자체), error.message 등을 포함합니다.
             if (error.response) {
-                // 서버가 응답했으나 상태 코드가 2xx 범위 밖인 경우
-                // 특히 404 (Not Found) 오류인 경우, 서버 엔드포인트 문제를 사용자에게 더 명확히 안내
                 if (error.response.status === 404) {
                     setMessage(`오류: 요청한 주소 (${error.config.url})를 서버에서 찾을 수 없습니다. Node.js 서버가 실행 중이며 /place/add 엔드포인트가 올바르게 설정되었는지 확인하세요.`);
                 } else {
                     setMessage(`오류: 서버 응답 오류 발생 (${error.response.status}): ${error.response.data.message || error.message}`);
                 }
             } else if (error.request) {
-                // 요청은 보냈지만 응답을 받지 못한 경우 (네트워크 오류 등)
                 setMessage('오류: 서버에 연결할 수 없습니다. 서버가 실행 중인지 확인하세요.');
             } else {
-                // 요청 설정 중 오류가 발생한 경우
                 setMessage(`오류: ${error.message}`);
             }
         }
@@ -154,6 +151,20 @@ const Placeadd = () => {
                             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                             value={operationHours}
                             onChange={(e) => setOperationHours(e.target.value)}
+                        />
+                    </div>
+
+                    {/* ✨ 연락처 입력 필드 추가 */}
+                    <div>
+                        <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                            연락처:
+                        </label>
+                        <input
+                            type="tel" // 전화번호 입력에 적합한 타입
+                            id="phoneNumber"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
                         />
                     </div>
 

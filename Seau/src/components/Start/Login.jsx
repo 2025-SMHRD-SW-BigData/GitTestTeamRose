@@ -1,49 +1,42 @@
 import React, { useState, useEffect, useContext } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { UserContext } from '../context/UserContext'
+import { UserContext } from '../../context/UserContext'
 
-const Join = () => {
+const Login = () => {
     const [id, setId] = useState('')
     const [pw, setPw] = useState('')
-    const [nick, setNick] = useState('')
-    const [gender, setGender] = useState('')
-    const [name, setName] = useState('')
-    const [birthDay, setBirthDay] = useState('')
-    const [introduce, setIntroduce]=useState('')
-    const [phoneNumber, setPhonNumber] = useState('')
-    const [mbti, setMbti] = useState('')
-    
     const nav = useNavigate()
+    const {userId} = useContext(UserContext);
+    const {isOauth} = useContext(UserContext);
+    const {setUserId} = useContext(UserContext);
+    const {setIsOauth} = useContext(UserContext);
+    console.log(userId,isOauth);
     
     // http://localhost:3001 서버로 요청
 
-    const tryJoin = (e)=>{
+    const tryLogin = (e)=>{
         e.preventDefault()
         console.log(id)
 
         axios
-            .post('http://localhost:3001', {
-                id : id,
+            .post('http://localhost:3001/login', {
+                id: id,
                 pw: pw,
-                nick: nick,
-                gender: gender,
-                name : name,
-                birthDay: birthDay,
-                introduce : introduce,
-                mbti : mbti,
-                phoneNumber : phoneNumber
             })
-            .then((res)=>{
-                if(res.data=='가입성공'){
-                    console.log('회원가입 성공: ', res.data)
-                    nav('/')
-                } else if(res.data=='가입실패'){
-                    console.log('회원가입 실패', res.data)
+            .then((res) => {
+                if (res.data == '인증성공') {
+                    console.log('로그인 성공: ', res.data)
+                    setUserId(id);
+                    setIsOauth(true);
+                    
+                    nav('/home1')
+                } else if(res.data=='인증실패'){
+                    console.log('로그인 실패', res.data)
                 }
             })
-            .catch((err)=>{
-                console.log('회원가입 실패: ', err)
+            .catch((err) => {
+                console.log('로그인 실패: ', err)
             })
     }
 
@@ -53,33 +46,18 @@ const Join = () => {
             <header style={styles.header}>
                 <div style={styles.headerContent}>
                     <h1 style={styles.logo}>Sea-U</h1>
+                    <span>로그인</span>
                 </div>
             </header>
-            <form onSubmit={tryJoin}>
-                <h1>회원가입 페이지 입니다</h1>
+            <form onSubmit={tryLogin}>
+                <h1>로그인 페이지 입니다</h1>
                 ID : <input type='text' value={id} onChange={(e)=>setId(e.target.value)} placeholder='ID를 입력하세요' />
                 <br />
                 PW : <input type='password' value={pw} onChange={(e)=>setPw(e.target.value)} placeholder='PW를 입력하세요' />
                 <br />
-                닉네임 : <input type='text' value={nick} onChange={(e)=>setNick(e.target.value)} placeholder='닉네임을 입력하세요' />
-                <br />
-                성별 : <select value={gender} onChange={(e) => setGender(e.target.value)} // setGender를 사용하여 상태 업데이트
-                > <option value="">선택</option><option value="male">남자</option><option value="female">여자</option>
-                </select>
-                <br />
-                이름 : <input type='text' value={name} onChange={(e)=>setName(e.target.value)} placeholder='이름을 입력하세요'></input>
-                <br />
-                생년월일 : <input type='date' value = {birthDay} onChange={(e)=>setBirthDay(e.target.value)}></input>
-                <br />
-                전화번호 : <input type='text' value={phoneNumber} onChange={(e)=>setPhonNumber(e.target.value)} placeholder='이름을 입력하세요'></input>
-                <br />
-                자기소개 : <input type='text' value={introduce} onChange={(e)=>setIntroduce(e.target.value)} placeholder='간단한 소개말을 적어주세요'></input>
-                <br />
-                mbti : <input type='text' value={mbti} onChange={(e)=>setMbti(e.target.value)} placeholder='mbti를 적어주세요'></input>
-                <br />
-                <button style={styles.headerButton} type='submit'>회원가입</button>
-                <button style={styles.headerButton} type='button' onClick={() => { nav('/') }}>로그인</button>
-            </form>
+                <button style={styles.headerButton} type='submit'>로그인</button>   
+                <button style={styles.headerButton} onClick={()=>{nav('/join')}}>회원가입</button>             
+            </form>            
         </div>
     )
 }
@@ -89,6 +67,8 @@ const styles = {
     height: '100vh',
     width: '100vw',
     position: 'relative',
+    top:'200px',
+    left:'400px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
   },
   header: {
@@ -277,4 +257,4 @@ const styles = {
 };
 
 
-export default Join
+export default Login

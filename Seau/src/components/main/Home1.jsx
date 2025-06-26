@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useContext } from 'react'
-import { UserContext } from '../context/UserContext'
+import { UserContext } from '../../context/UserContext'
 import { useNavigate } from 'react-router-dom'
 import Weather from './Weather'
 import KakaoMap from './KakaoMap'
 import getDistance from './getDistance'
-import '../style/Seau.css'
+import '../../style/Seau.css'
 
 const Home1 = () => {
   // 메인 App 컴포넌트

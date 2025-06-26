@@ -4,7 +4,7 @@ import { Button, Card, CardContent, CardHeader, Typography, Box } from "@mui/mat
 import { X } from "lucide-react";
 import Login2 from "./Login2";
 import Join2 from "./Join2";
-import { UserContext } from '../context/UserContext';
+import { UserContext } from '../../context/UserContext';
 
 export function AuthSidebar({ isOpen, onClose, initialMode }) {
   const [mode, setMode] = useState(initialMode || "login");

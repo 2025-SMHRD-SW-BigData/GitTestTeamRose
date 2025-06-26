@@ -110,7 +110,7 @@ app.get('/place/beach', (req,res)=>{
 })
 
 app.post('/place/add', async (req, res) => {
-    const { placeName, description, address, mainImageUrl, placeType, operationHours } = req.body;
+    const { placeName, description, address, mainImageUrl, placeType, operationHours, phone_number } = req.body;
     console.log('새로운 장소 추가 요청:', req.body);
 
     let latitude = null;
@@ -139,10 +139,10 @@ app.post('/place/add', async (req, res) => {
 
     // 데이터베이스에 장소 정보 저장
     const sql = `
-        INSERT INTO place (place_name, description, address, latitude, longitude, main_image_url, place_type, operating_time)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO place (place_name, description, address, latitude, longitude, main_image_url, place_type, operating_time, phone_number)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
     `;
-    const values = [placeName, description, address, latitude, longitude, mainImageUrl, placeType, operationHours];
+    const values = [placeName, description, address, latitude, longitude, mainImageUrl, placeType, operationHours, phone_number];
 
     conn.query(sql, values, (err, result) => {
         if (!err) {

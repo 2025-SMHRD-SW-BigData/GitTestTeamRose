@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import Home from './components/Home'
-import Join from './components/Join'
-import Join2 from './components/Join2'
-import Login from './components/Login'
+import Home from './components/main/Home'
+import Join from './components/Start/Join'
+import Join2 from './components//Start/Join2'
+import Login from './components//Start/Login'
 import Mypage from './components/Mypage'
 import Mypage2 from './components/Mypage2'
-import Home1 from './components/Home1'
-import Placeadd from './components/placeadd'
+import Home1 from './components/main/Home1'
+import Placeadd from './components/Placeadd'
 import { UserContext } from './context/UserContext'
-import Weather from './components/Weather'
+import Weather from './components/main/Weather'
 import { Navigation } from "./components/Navigation"
-import { AuthSidebar } from "./components/AuthSiderbar"
+import { AuthSidebar } from "./components/Start/AuthSiderbar"
 import {useNavigate} from 'react-router-dom'
 import './App.css'
 

@@ -3,7 +3,7 @@ import axios from "axios";
 import { Box, Typography, Button } from "@mui/material";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { UserContext } from "../context/UserContext";  // 경로는 환경에 맞게 조정
+import { UserContext } from "../../context/UserContext";  // 경로는 환경에 맞게 조정
 
 export default function Login({ formData, onChange}) {
   const [showPassword, setShowPassword] = useState(false);
