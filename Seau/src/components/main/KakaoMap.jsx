@@ -100,9 +100,19 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
 
     // 선택한 위치에따라 5km이내의 주변 관광지 마커를 띄우기
     useEffect(() => {
-        if (!selectedLocation || placeMarkerList.length === 0) return
+        if (!selectedLocation || placeMarkerList.length === 0 || markerList.length === 0) return
 
-        const nearby = placeMarkerList.filter((place) => {
+        const nearbyTour = placeMarkerList.filter((place) => {
+            const dist = getDistance(
+                selectedLocation.lat,
+                selectedLocation.lng,
+                place.lat,
+                place.lng
+            )
+            return dist < 5 // 5km 이내만 표시
+        })
+
+        const nearbyBeaches = markerList.filter((place)=>{
             const dist = getDistance(
                 selectedLocation.lat,
                 selectedLocation.lng,
@@ -114,11 +124,13 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
         // console.log('선택된 위치:', selectedLocation)
         // console.log('필터된 nearbyMarkers:', nearby)
 
+        const nearby = [...nearbyTour, ...nearbyBeaches]
+
         setNearbyMarkers(nearby)
         if (onNearbyMarkersChange) {
             onNearbyMarkersChange(nearby)
         }
-    }, [selectedLocation, placeMarkerList])
+    }, [selectedLocation, placeMarkerList, markerList])
 
     const handleMapClick = (_map, mouseEvent) => {
         const lat = mouseEvent.latLng.getLat()

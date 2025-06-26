@@ -17,6 +17,7 @@ const Home1 = () => {
   const nav = useNavigate()
   const { userId, setUserId, isOauth, setIsOauth } = useContext(UserContext);
   const [nearbyAttractions, setNearbyAttractions] = useState([])
+  const [isMarkerClick, setIsMarkerClick] = useState(false)
 
 
   // 위치 선택 시 데이터 로드
@@ -25,6 +26,8 @@ const Home1 = () => {
     setLoading(true);
     setLeftPanelOpen(true);
     setRightPanelOpen(true);
+    // 마커 클릭인지 판단
+    setIsMarkerClick(!!imageUrl)
 
     try {
       // 레저 데이터 가져오기
@@ -83,13 +86,10 @@ const Home1 = () => {
   const fetchMediaData = async (location) => {
     const mockMediaData = {
       image: [
-        'https://via.placeholder.com/200x150/4CAF50/white?text=Image+1',
-        'https://via.placeholder.com/200x150/2196F3/white?text=Image+2',
-        'https://via.placeholder.com/200x150/FF9800/white?text=Image+3'
+
       ],
       videos: [
-        { title: '지역 소개 영상', thumbnail: 'https://via.placeholder.com/200x120/f44336/white?text=Video+1' },
-        { title: '관광 명소 영상', thumbnail: 'https://via.placeholder.com/200x120/9C27B0/white?text=Video+2' }
+
       ]
     };
     setMediaData(mockMediaData);
@@ -228,18 +228,27 @@ const Home1 = () => {
               <div className='mediaSection'>
                 <h4>📸 관련 미디어</h4>
 
-                <div className='imageGrid'>
-                  {/* 마커 클릭 시 전달된 이미지가 있으면 항상 첫 번째로 출력 */}
-                  {mediaData?.image?.[0] && (
+                <div className='selectedImageContainer'>
+                  {/* 선택된 마커 이미지 (클릭했을 경우만) */}
+                  {isMarkerClick && mediaData?.image?.[0] && (
                     <img
                       src={mediaData.image[0]}
                       alt="선택된 마커 이미지"
-                      className='mediaImage largeImage'
+                      className='largeImage'
                     />
                   )}
+                  </div>
 
-                  {/* nearbyAttractions 이미지 출력 */}
-                  {nearbyAttractions.map((place, idx) => (
+                  <div className='imageGrid'>
+                  {/* 중복 제거: 마커 이미지와 겹치지 않는 nearby 이미지만 표시 */}
+                  {[...new Map(
+                    nearbyAttractions
+                      .filter(place =>
+                        place.image &&
+                        (!isMarkerClick || place.image !== mediaData?.image?.[0])
+                      )
+                      .map(place => [place.image, place])
+                  ).values()].map((place, idx) => (
                     <img
                       key={idx}
                       src={place.image}
@@ -247,17 +256,6 @@ const Home1 = () => {
                       className='mediaImage'
                     />
                   ))}
-
-                  {/* nearby가 없고, image가 1개 이상일 때 1번 이미지 이후 추가 이미지 출력 */}
-                  {nearbyAttractions.length === 0 && mediaData?.image?.length > 1 &&
-                    mediaData.image.slice(1).map((img, idx) => (
-                      <img
-                        key={`extra-${idx}`}
-                        src={img}
-                        alt={`추가 지역 이미지 ${idx + 2}`}
-                        className='mediaImage'
-                      />
-                    ))}
                 </div>
 
                 <h5>🎬 관련 영상</h5>
