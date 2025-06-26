@@ -9,6 +9,7 @@ import { UserContext } from '../../context/UserContext';
 export function AuthSidebar({ isOpen, onClose, initialMode }) {
   const [mode, setMode] = useState(initialMode || "login");
   const {isOauth} = useContext(UserContext);
+  
   useEffect(() => {
     setMode(initialMode || "login");
   }, [initialMode]);
@@ -33,6 +34,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
     <AnimatePresence>
       {isOpen && (
         <>
+          {/* 사이드바 패널 이외 배경 색 변환 */}
           <motion.div
             style={{ position: "fixed", inset: 0, backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1300 }}
             initial={{ opacity: 0 }}
@@ -41,6 +43,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
             onClick={onClose}
           />
 
+          {/* 사이드바 패널 */}
           <motion.div
             style={{
               position: "fixed",
@@ -60,6 +63,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
           >
             <Box p={3}>
+              {/* 헤더: 제목 + 닫기 버튼 */}
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={4}>
                 <Typography variant="h5" component="h2" sx={{ fontWeight: "bold", color: "text.primary" }}>
                   {mode === "login" ? "로그인" : "회원가입"}
@@ -69,6 +73,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
                 </Button>
               </Box>
 
+              {/* 모드 전환 버튼 */}
               <Box
                 sx={{
                   display: "flex",
@@ -101,6 +106,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
                 ))}
               </Box>
 
+                {/* 로그인 / 회원가입 폼 */}
               <Card variant="outlined" sx={{ boxShadow: 3 }}>
                 <CardHeader
                   title={
@@ -110,6 +116,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
                   }
                 />
                 <CardContent>
+                  {/* 로그인 / 회원가입 폼 컴포넌트 */}
                   {mode === "login" ? (
                     <Login2 formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
                   ) : (
@@ -124,6 +131,7 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
                     </Box>
                   )}
 
+                  {/* 로그인 / 회원가입 전환 */}
                   <Box mt={3} textAlign="center" sx={{ fontSize: 14, color: "text.secondary" }}>
                     {mode === "login" ? "계정이 없으신가요?" : "이미 계정이 있으신가요?"}{" "}
                     <Button
