@@ -1,7 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from '@emotion/styled';
 import { Eye, EyeOff, Lock } from 'lucide-react';
+import { UserContext } from '../../context/UserContext';
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom'
 
+// --- Styled Components (기존과 동일) ---
 const Card = styled.div`
   background-color: white;
   border-radius: 12px;
@@ -132,8 +136,13 @@ const SubmitButton = styled.button`
     background: linear-gradient(to right, #6d28d9, #2563eb);
   }
 `;
+// --- Styled Components 끝 ---
 
 export function PasswordChange() {
+  // UserContext에서 userId를 가져와 비밀번호 변경 요청에 사용합니다.
+  const { userId } = useContext(UserContext);
+  const navigate = useNavigate(); // 성공/실패 후 리다이렉트가 필요할 경우 사용
+
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -150,6 +159,7 @@ export function PasswordChange() {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    // 사용자가 입력할 때 해당 필드의 에러 메시지를 지웁니다.
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: '' }));
     }
@@ -168,9 +178,8 @@ export function PasswordChange() {
 
     if (!formData.newPassword) {
       newErrors.newPassword = '새 비밀번호를 입력해주세요.';
-    } else if (formData.newPassword.length < 8) {
-      newErrors.newPassword = '비밀번호는 8자 이상이어야 합니다.';
     }
+    // 8자 이상 비밀번호 길이 검증 조건 제거
 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = '비밀번호 확인을 입력해주세요.';
@@ -187,15 +196,48 @@ export function PasswordChange() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => { // handleSubmit을 async 함수로 변경
     e.preventDefault();
     if (validateForm()) {
-      alert('비밀번호가 성공적으로 변경되었습니다!');
-      setFormData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: '',
-      });
+      // 백엔드로 보낼 데이터
+      const dataToSend = {
+        userId: userId, // UserContext에서 가져온 사용자 ID
+        currentPassword: formData.currentPassword,
+        newPassword: formData.newPassword,
+      };
+
+      try {
+        const response = await axios.post('http://localhost:3001/pwchange', dataToSend);
+        console.log(response);
+        if (response.data == '변경성공') { // 백엔드에서 { success: true }를 보낼 경우
+          alert('비밀번호가 성공적으로 변경되었습니다!');
+          setFormData({ // 성공 후 폼 초기화
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: '',
+          });
+          // 선택적으로 사용자 리다이렉트 또는 성공 메시지 표시
+          // navigate('/mypage'); // 예시: 마이페이지로 리다이렉트
+        } else {
+          // 백엔드에서 success: false와 메시지를 보낼 경우
+          alert(`비밀번호 변경 실패 현재 비밀번호를 확인하세요!': ${response.data || '알 수 없는 오류가 발생했습니다.'}`);
+          // 백엔드 응답에 따라 특정 에러를 설정할 수도 있습니다.
+          // 예: response.data.message가 현재 비밀번호 오류를 나타낼 경우
+          // setErrors({ currentPassword: response.data.message });
+        }
+      } catch (error) {
+        console.error('비밀번호 변경 요청 중 오류 발생:', error);
+        if (error.response) {
+          // 요청이 전송되었고, 서버가 2xx 범위 밖의 상태 코드로 응답한 경우
+          alert(`서버 오류: ${error.response.data.message || '요청 처리 중 문제가 발생했습니다.'}`);
+        } else if (error.request) {
+          // 요청이 전송되었지만 응답을 받지 못한 경우 (네트워크 오류 등)
+          alert('서버에 연결할 수 없습니다. 네트워크 상태를 확인해주세요.');
+        } else {
+          // 요청 설정 중 오류가 발생한 경우
+          alert('비밀번호 변경 중 예상치 못한 오류가 발생했습니다.');
+        }
+      }
     }
   };
 
@@ -242,7 +284,8 @@ export function PasswordChange() {
               </ToggleButton>
             </InputWrapper>
             {errors.newPassword && <ErrorText>{errors.newPassword}</ErrorText>}
-            <HelpText>8자 이상의 비밀번호를 입력해주세요.</HelpText>
+            {/* 8자 이상 도움말 제거 */}
+            <HelpText>새로운 비밀번호를 입력해주세요.</HelpText>
           </FormGroup>
 
           <FormGroup>

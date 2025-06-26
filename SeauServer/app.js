@@ -72,7 +72,7 @@ app.post('/login', (req,res) => {
 app.post('/mypage', (req,res) => {
     const {userId} = req.body;
 
-    let sql = 'select user_id, user_name, nickname, birth_date, gender, profile_image_url, introduce, mbti, manner_score from users where user_id_name = ?';
+    let sql = `select user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score from users where user_id_name = ?;`;
     
     console.log('마이페이지 정보 요청')
     console.log(req.body);
@@ -87,6 +87,57 @@ app.post('/mypage', (req,res) => {
                 message:'마이페이지 정보 조회 성공',
                 data : userData
             })
+        }
+        else {
+            console.log(err);
+        }
+    })
+})
+
+app.post('/profileupdate', (req,res) => {
+    console.log('마이페이지 수정 요청')
+    console.log(req.body);
+    const {userId, nickname, profileImage, birth_date, gender, phone_number, mbti, introduce} = req.body
+    console.log(userId);
+    let sql = 'update users set nickname = ?, profile_image_url = ? , birth_date = ?, gender = ?, phone_number = ?,mbti = ?,introduce=? where user_id_name = ?';
+    conn.connect();
+    conn.query(sql,[nickname, profileImage, birth_date, gender, phone_number, mbti, introduce, userId] ,(err, rows)=>{
+        if(!err){
+            console.log(rows)
+            res.send('변경성공')
+                
+        } else {
+            console.log(err);
+        }
+    })
+})
+
+app.post('/pwchange',(req,res) => {
+    console.log('비밀번호 변경 요청');
+    console.log(req.body);
+    const {userId, currentPassword, newPassword} = req.body;
+    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    
+    console.log(req.body);
+    
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [userId,currentPassword],(err,rows) => {
+        if(!err) {
+            if(rows.length>0) {
+                let sql2 = 'update users set user_pw = ? where user_id_name = ?'
+                conn.query(sql2, [newPassword, userId],(err,rows) => {
+                    if(!err) {
+                        console.log(rows);
+                        res.send('변경성공')
+                    }
+                    else {
+                        console.log(err)
+                    }
+                });
+            }
+            else {
+                res.send("인증실패")
+            }
         }
         else {
             console.log(err);
