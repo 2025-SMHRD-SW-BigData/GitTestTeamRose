@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from '@emotion/styled';
 import { ProfileManagement } from './ProfileManagement';
 import { PasswordChange } from './PasswordChange';
 import { CustomerSupport } from './CustomerSupport';
 import { User, Lock, HelpCircle } from 'lucide-react';
+import { UserContext } from '../../context/UserContext';
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom'
 
 // Container 전체 페이지 배경과 패딩
 const Container = styled.div`
@@ -225,12 +228,33 @@ export default function MyPage() {
   const [authMode, setAuthMode] = useState('login');
   const [activeSection, setActiveSection] = useState('profile');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+  const [userData, setUserData] = useState(null);
+  const nav = useNavigate();
+  const { userId, setUserId } = useContext(UserContext);
+  const { isOauth } = useContext(UserContext);
+  console.log(userId, isOauth)
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
+
+  useEffect(() => {
+    console.log('통신요청')
+    axios
+      .post('http://localhost:3001/mypage', {
+        userId: userId
+        
+      })
+      .then((res) => {
+        console.log(res.data.data);
+        const result = res.data.data;
+        setUserData(result);
+        console.log(userData);
+      })
+
+  }, [userData?.gender])
 
   const handleLoginClick = () => {
     setAuthMode('login');

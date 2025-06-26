@@ -13,6 +13,7 @@ import Weather from './components/main/Weather'
 import { Navigation } from "./components/Navigation"
 import { AuthSidebar } from "./components/Start/AuthSiderbar"
 import {useNavigate} from 'react-router-dom'
+import { ProfileManagement } from './components/mypage/ProfileManagement'
 import './App.css'
 
 
@@ -21,6 +22,8 @@ function App() {
   const [userId, setUserId] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarMode, setSidebarMode] = useState("login")
+  const [userData, setUserData] = useState(null);
+  
 
   const openSidebar = (mode) => {
     setSidebarMode(mode)
@@ -34,7 +37,7 @@ function App() {
   }
 
   return (
-    <UserContext.Provider value={{ isOauth, setIsOauth, userId, setUserId }}>
+    <UserContext.Provider value={{ isOauth, setIsOauth, userId, setUserId, userData, setUserData }}>
       {/* 네비게이션 */}
       <Navigation
         onLoginClick={() => {
@@ -49,7 +52,7 @@ function App() {
         }}
         onSignupClick={() => {
           if (isOauth) {
-            nav('/mypage');
+            nav('/mypage2');
           }
           else {
             openSidebar("signup")
@@ -67,6 +70,7 @@ function App() {
         <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
         <Route path='/' element={<AuthSidebar isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
         <Route path='/placeadd' element={<Placeadd></Placeadd>}></Route>
+        <Route path='/profilemanagement' element = {<ProfileManagement></ProfileManagement>}></Route>
       </Routes>
 
     </UserContext.Provider>
