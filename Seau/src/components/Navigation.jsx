@@ -3,6 +3,7 @@ import { AppBar, Toolbar, Typography, Button, Box, Container } from "@mui/materi
 import { User, UserPlus } from "lucide-react";
 import { UserContext } from '../context/UserContext'
 import { useContext } from "react";
+import { Link } from "react-router-dom";
 
 export function Navigation({ onLoginClick, onSignupClick }) {
   const {isOauth} = useContext(UserContext);
@@ -36,7 +37,7 @@ export function Navigation({ onLoginClick, onSignupClick }) {
                   WebkitTextFillColor: "transparent",
                 }}
               >
-                SeaU
+                <Link to={isOauth ? '/home1' : '/'}>SeaU</Link>
               </Typography>
             </motion.div>
 

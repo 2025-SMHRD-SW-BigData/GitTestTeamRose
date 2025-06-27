@@ -5,7 +5,7 @@ import useKakaoLoader from './useKaKaoLoader'
 import axios from 'axios'
 import getDistance from './getDistance'
 
-const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange }) => {
+const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, mapCenter, mapLevel }) => {
     // Kakao SDK 로드 완료 여부 받기
     const isKakaoLoaded = useKakaoLoader()
     const [placeMarkerList, setPlaceMarkerList] = useState([])
@@ -51,7 +51,8 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                             return {
                                 ...coords,
                                 name: beach.place_name,
-                                image: beach.main_image_url
+                                image: beach.main_image_url,
+                                type: 'beach'
                             }
                         } catch (e) {
                             console.error('지오코딩 실패:', e.message)
@@ -88,7 +89,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                     }
                 })
                 setPlaceMarkerList(provideTours.filter(Boolean))
-                console.log(placeMarkerList)
+                // console.log(placeMarkerList)
             } catch (err) {
                 console.error('주변 관광 정보 데이터 불러오기 실패:', err)
             }
@@ -137,12 +138,13 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
         const lng = mouseEvent.latLng.getLng()
         onLocationSelect({ lat, lng })
     }
+    console.log(mapLevel)
 
     return (
         <Map
-            center={{ lat: 33.36167, lng: 126.52917 }}
+            center={mapCenter ?? { lat: 33.36167, lng: 126.52917 }}
             className='map'
-            level={10}
+            level={mapLevel ?? 9}
             onClick={handleMapClick}
         >
             {/* beach 마커 */}
@@ -151,7 +153,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                     key={idx}
                     position={{ lat: marker.lat, lng: marker.lng }}
                     onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}>
-                    {console.log(marker.image)}
+                    {/* {console.log(marker.image)} */}
                     <div>{marker.name}</div>
                 </MapMarker>
             ))}
@@ -163,7 +165,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                     position={{ lat: marker.lat, lng: marker.lng }}
                     onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}
                 >
-                    <div style={{ color: 'orange' }}>{marker.name}</div>
+                    <div style={{ color: marker.type==='beach' ? 'black' : 'orange' }}>{marker.name}</div>
                 </MapMarker>
             ))}
 

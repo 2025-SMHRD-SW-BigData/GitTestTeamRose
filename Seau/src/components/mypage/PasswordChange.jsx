@@ -5,7 +5,7 @@ import { UserContext } from '../../context/UserContext';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom'
 
-// --- Styled Components (기존과 동일) ---
+// --- Styled Components ---
 const Card = styled.div`
   background-color: white;
   border-radius: 12px;
@@ -139,24 +139,28 @@ const SubmitButton = styled.button`
 // --- Styled Components 끝 ---
 
 export function PasswordChange() {
-  // UserContext에서 userId를 가져와 비밀번호 변경 요청에 사용합니다.
+  // UserContext에서 userId를 가져와 비밀번호 변경 요청에 사용
   const { userId } = useContext(UserContext);
   const navigate = useNavigate(); // 성공/실패 후 리다이렉트가 필요할 경우 사용
 
+  // 입력한 비밀번호 데이터 관리
   const [formData, setFormData] = useState({
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
   });
 
+  // 비밀번호 보이기/숨기기 관리
   const [showPasswords, setShowPasswords] = useState({
     current: false,
     new: false,
     confirm: false,
   });
 
+  // 입력 에러 메세지 관리
   const [errors, setErrors] = useState({});
 
+  // 사용자 입력값 변경 시 필드 업데이트
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // 사용자가 입력할 때 해당 필드의 에러 메시지를 지웁니다.
@@ -165,10 +169,12 @@ export function PasswordChange() {
     }
   };
 
+  // 비밀번호 보이기/숨기기 함수
   const togglePasswordVisibility = (field) => {
     setShowPasswords((prev) => ({ ...prev, [field]: !prev[field] }));
   };
 
+  // 비밀번호 유효성 검사
   const validateForm = () => {
     const newErrors = {};
 
@@ -179,7 +185,6 @@ export function PasswordChange() {
     if (!formData.newPassword) {
       newErrors.newPassword = '새 비밀번호를 입력해주세요.';
     }
-    // 8자 이상 비밀번호 길이 검증 조건 제거
 
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = '비밀번호 확인을 입력해주세요.';
@@ -207,6 +212,7 @@ export function PasswordChange() {
       };
 
       try {
+        // 백엔드에 비밀번호 변경 요청
         const response = await axios.post('http://localhost:3001/pwchange', dataToSend);
         console.log(response);
         if (response.data == '변경성공') { // 백엔드에서 { success: true }를 보낼 경우

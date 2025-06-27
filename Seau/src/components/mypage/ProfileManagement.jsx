@@ -187,27 +187,23 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-  width: 100%;
+  width: 94%;
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 16px;
   outline: none;
   transition: all 0.2s;
+  background-color: #f9fafb;
 
   &:focus {
     border-color: #7c3aed;
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
   }
-
-  &:disabled {
-    background-color: #f9fafb;
-    cursor: not-allowed;
-  }
 `;
 
 const Select = styled.select`
-  width: 100%;
+  width: 101%;
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -216,6 +212,7 @@ const Select = styled.select`
   background-color: white;
   cursor: pointer;
   transition: all 0.2s;
+  background-color: #f9fafb;
 
   &:focus {
     border-color: #7c3aed;
@@ -223,13 +220,12 @@ const Select = styled.select`
   }
 
   &:disabled {
-    background-color: #f9fafb;
-    cursor: not-allowed;
+    cursor: default;
   }
 `;
 
 const Textarea = styled.textarea`
-  width: 100%;
+  width: 97%;
   padding: 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -238,15 +234,11 @@ const Textarea = styled.textarea`
   resize: none;
   font-family: inherit;
   transition: all 0.2s;
+  background-color: #f9fafb;
 
   &:focus {
     border-color: #7c3aed;
     box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
-  }
-
-  &:disabled {
-    background-color: #f9fafb;
-    cursor: not-allowed;
   }
 `;
 const ReadOnlyField = styled.div`

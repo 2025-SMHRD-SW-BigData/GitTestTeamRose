@@ -107,20 +107,20 @@ const Content = styled.div`
 `;
 
 // 상단 네비게이션 바
-const NavigationBar = styled.nav`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 64px;
-  background-color: white;
-  border-bottom: 1px solid #e5e7eb;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 24px;
-  z-index: 1000;
-`;
+// const NavigationBar = styled.nav`
+//   position: fixed;
+//   top: 0;
+//   left: 0;
+//   right: 0;
+//   height: 64px;
+//   background-color: white;
+//   border-bottom: 1px solid #e5e7eb;
+//   display: flex;
+//   align-items: center;
+//   justify-content: space-between;
+//   padding: 0 24px;
+//   z-index: 1000;
+// `;
 
 // 로고 스타일
 const Logo = styled.div`
@@ -197,17 +197,17 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
-function Navigation({ onLoginClick, onSignupClick }) {
-  return (
-    <NavigationBar>
-      <Logo>MyApp</Logo>
-      <AuthButtons>
-        <AuthButton onClick={onLoginClick}>로그인</AuthButton>
-        <AuthButtonPrimary onClick={onSignupClick}>회원가입</AuthButtonPrimary>
-      </AuthButtons>
-    </NavigationBar>
-  );
-}
+// function Navigation({ onLoginClick, onSignupClick }) {
+//   return (
+//     <NavigationBar>
+//       <Logo>MyApp</Logo>
+//       <AuthButtons>
+//         <AuthButton onClick={onLoginClick}>로그인</AuthButton>
+//         <AuthButtonPrimary onClick={onSignupClick}>회원가입</AuthButtonPrimary>
+//       </AuthButtons>
+//     </NavigationBar>
+//   );
+// }
 
 function AuthSidebar({ isOpen, onClose, initialMode }) {
   if (!isOpen) return null;
@@ -289,8 +289,8 @@ export default function MyPage() {
 
   return (
     <>
-      <Navigation onLoginClick={handleLoginClick} onSignupClick={handleSignupClick} />
-      <AuthSidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} initialMode={authMode} />
+      {/* <Navigation onLoginClick={handleLoginClick} onSignupClick={handleSignupClick} /> */}
+      {/* <AuthSidebar isOpen={isSidebarOpen} onClose={handleCloseSidebar} initialMode={authMode} /> */}
 
       <Container>
         <MaxWidth>
