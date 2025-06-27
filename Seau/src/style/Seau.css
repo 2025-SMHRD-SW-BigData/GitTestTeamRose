@@ -144,42 +144,70 @@
 }
 
 .weatherSection {
-  margin-bottom: 30px;
+  margin-bottom: 0px;
 }
 
 .weatherCard {
   background: linear-gradient(135deg, #74b9ff, #0984e3);
   color: white;
-  padding: 20px;
-  border-radius: 12px;
+  padding: 8px;
+  border-radius: 8px;
   text-align: center;
 }
 
+.clearWeather {
+  background: linear-gradient(135deg, #ffeaa7, #fab1a0); /* 맑음 - 따뜻한 노랑/오렌지 */
+}
+
+.cloudyWeather {
+  background: linear-gradient(135deg, #b2bec3, #636e72); /* 구름 많음 - 회색 */
+}
+
+.rainyWeather {
+  background: linear-gradient(135deg, #74b9ff, #0984e3); /* 비 - 파랑 */
+}
+
+.snowyWeather {
+  background: linear-gradient(135deg, #ffffff, #dfe6e9); /* 눈 - 하양 */
+  color: #2d3436;
+}
+
+.stormyWeather {
+  background: linear-gradient(135deg, #636e72, #2d3436); /* 천둥번개 - 어두운 회색 */
+}
+
+.foggyWeather {
+  background: linear-gradient(135deg, #dfe6e9, #b2bec3); /* 안개 - 흐림 */
+  color: #2d3436;
+}
+
+.defaultWeather {
+  background: linear-gradient(135deg, #74b9ff, #0984e3); /* 기본 */
+}
+
 .temperature {
-  font-size: 36px;
+  display: flex;
+  justify-content: space-around;
+  font-size: 20px;
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
 }
 
 .condition {
-  font-size: 18px;
-  margin-bottom: 12px;
+  font-size: 14px;
+  margin-bottom: 0px;
 }
 
 .weatherDetails {
   display: flex;
   justify-content: space-around;
-  margin-bottom: 12px;
+  margin-bottom: 0px;
   font-size: 14px;
 }
 
 .location {
   font-size: 12px;
   opacity: 0.8;
-}
-
-.mediaSection {
-  /* No specific styles, leave empty or add as needed */
 }
 
 .imageGrid {
@@ -189,11 +217,28 @@
   margin-bottom: 20px;
 }
 
+.selectedImageContainer {
+  width: 100%;
+  max-height: 400px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
 .mediaImage {
   width: 100%;
   height: 80px;
-  object-fit: contain;
+  object-fit: cover;
   border-radius: 8px;
+}
+
+.largeImage {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
 }
 
 .videoList {

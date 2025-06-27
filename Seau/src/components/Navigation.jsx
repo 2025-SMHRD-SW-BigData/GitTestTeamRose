@@ -91,7 +91,6 @@ export function Navigation({ onLoginClick, onSignupClick }) {
           </Toolbar>
         </Container>
       </AppBar>
-      console.log(isOauth)
     </motion.div>
   );
 }

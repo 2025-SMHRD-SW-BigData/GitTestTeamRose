@@ -12,12 +12,6 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
     const [nearbyMarkers, setNearbyMarkers] = useState([])
     const [markerList, setMarkerList] = useState([])
 
-    const tourList = [
-        { name: '어울림감귤체험농장', address: '제주특별자치도 서귀포시 성산읍 서성일로 809' },
-        { name: '선경감귤체험농장', address: '제주특별자치도 서귀포시 표선면 일주동로 6214' },
-        { name: '제주왕감귤체험농장', address: '제주특별자치도 서귀포시 남원읍 남위남성로 10-14' }
-    ]
-
     // 주소 → 위경도 변환 함수
     const geocodeAddress = (address) => {
         return new Promise((resolve, reject) => {
@@ -44,9 +38,10 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
         if (!isKakaoLoaded) return
 
         const fetchAndGeocode = async () => {
+            // beach 데이터 가져오기
             try {
                 const res = await axios.get('http://localhost:3001/place/beach') // 서버 주소에 맞게 수정
-                console.log(res.data)
+                // console.log(res.data)
                 const beachList = res.data.beach // [{ name: '곽지해수욕장', address: '제주 제주시 곽지리...' }]
 
                 const geocoded = await Promise.all(
@@ -66,25 +61,36 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                 )
 
                 setMarkerList(geocoded.filter(Boolean)) // 실패한 건 제거
-
-                const geocodeTours = await Promise.all(
-                    tourList.map(async (place) => {
-                        try {
-                            const coords = await geocodeAddress(place.address)
-                            return {
-                                ...coords,
-                                name: place.name,
-                                image: null
-                            }
-                        } catch (e) {
-                            console.log('Place 지오코딩 실패', e.message)
-                            return null
-                        }
-                    })
-                )
-                setPlaceMarkerList(geocodeTours.filter(Boolean))
             } catch (err) {
                 console.error('해변 데이터 불러오기 실패:', err)
+            }
+
+            // 주변 관광 데이터 가져오기
+            try {
+                const tourRes = await axios.get('http://localhost:3001/place/tour')
+                const tourList = tourRes.data.tour;
+
+                const provideTours = tourList.map((tour) => {
+                    if (tour.latitude == null || tour.longitude == null) {
+                        console.warn(`위치 정보 누락된 장소 : ${tour.place_name}`)
+                        return null;
+                    }
+
+                    return {
+                        lat: parseFloat(tour.latitude),
+                        lng: parseFloat(tour.longitude),
+                        name: tour.place_name,
+                        image: tour.main_image_url,
+                        description: tour.description,
+                        operatingTime: tour.operating_Time,
+                        phone: tour.phone_number,
+                        type: tour.place_type
+                    }
+                })
+                setPlaceMarkerList(provideTours.filter(Boolean))
+                console.log(placeMarkerList)
+            } catch (err) {
+                console.error('주변 관광 정보 데이터 불러오기 실패:', err)
             }
         }
 
@@ -92,23 +98,39 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
         fetchAndGeocode()
     }, [isKakaoLoaded])
 
-    useEffect(()=>{
-        if(!selectedLocation || placeMarkerList.length === 0) return
+    // 선택한 위치에따라 5km이내의 주변 관광지 마커를 띄우기
+    useEffect(() => {
+        if (!selectedLocation || placeMarkerList.length === 0 || markerList.length === 0) return
 
-        const nearby = placeMarkerList.filter((place)=>{
+        const nearbyTour = placeMarkerList.filter((place) => {
             const dist = getDistance(
                 selectedLocation.lat,
                 selectedLocation.lng,
                 place.lat,
                 place.lng
             )
-            return dist < 10 // 10km 이내만 표시
+            return dist < 5 // 5km 이내만 표시
         })
+
+        const nearbyBeaches = markerList.filter((place)=>{
+            const dist = getDistance(
+                selectedLocation.lat,
+                selectedLocation.lng,
+                place.lat,
+                place.lng
+            )
+            return dist < 5 // 5km 이내만 표시
+        })
+        // console.log('선택된 위치:', selectedLocation)
+        // console.log('필터된 nearbyMarkers:', nearby)
+
+        const nearby = [...nearbyTour, ...nearbyBeaches]
+
         setNearbyMarkers(nearby)
-        if (onNearbyMarkersChange){
+        if (onNearbyMarkersChange) {
             onNearbyMarkersChange(nearby)
         }
-    },[selectedLocation, placeMarkerList])
+    }, [selectedLocation, placeMarkerList, markerList])
 
     const handleMapClick = (_map, mouseEvent) => {
         const lat = mouseEvent.latLng.getLat()
@@ -129,6 +151,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange })
                     key={idx}
                     position={{ lat: marker.lat, lng: marker.lng }}
                     onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}>
+                    {console.log(marker.image)}
                     <div>{marker.name}</div>
                 </MapMarker>
             ))}
