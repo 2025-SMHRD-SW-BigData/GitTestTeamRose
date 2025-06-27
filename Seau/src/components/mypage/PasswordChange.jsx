@@ -262,7 +262,7 @@ export function PasswordChange() {
                 hasError={!!errors.currentPassword}
               />
               <ToggleButton type="button" onClick={() => togglePasswordVisibility('current')}>
-                {showPasswords.current ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPasswords.current ?  <Eye size={20} /> : <EyeOff size={20} /> }
               </ToggleButton>
             </InputWrapper>
             {errors.currentPassword && <ErrorText>{errors.currentPassword}</ErrorText>}
@@ -280,7 +280,7 @@ export function PasswordChange() {
                 hasError={!!errors.newPassword}
               />
               <ToggleButton type="button" onClick={() => togglePasswordVisibility('new')}>
-                {showPasswords.new ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPasswords.new ?  <Eye size={20} /> : <EyeOff size={20} /> }
               </ToggleButton>
             </InputWrapper>
             {errors.newPassword && <ErrorText>{errors.newPassword}</ErrorText>}
@@ -300,7 +300,7 @@ export function PasswordChange() {
                 hasError={!!errors.confirmPassword}
               />
               <ToggleButton type="button" onClick={() => togglePasswordVisibility('confirm')}>
-                {showPasswords.confirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                {showPasswords.confirm ?  <Eye size={20} /> : <EyeOff size={20} /> }
               </ToggleButton>
             </InputWrapper>
             {errors.confirmPassword && <ErrorText>{errors.confirmPassword}</ErrorText>}

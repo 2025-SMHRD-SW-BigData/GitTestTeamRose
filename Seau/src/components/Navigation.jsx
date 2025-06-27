@@ -3,9 +3,11 @@ import { AppBar, Toolbar, Typography, Button, Box, Container } from "@mui/materi
 import { User, UserPlus } from "lucide-react";
 import { UserContext } from '../context/UserContext'
 import { useContext } from "react";
+import { useNavigate } from "react-router-dom";
 
 export function Navigation({ onLoginClick, onSignupClick }) {
   const {isOauth} = useContext(UserContext);
+  const nav = useNavigate();
   console.log(isOauth);
   return (
     
@@ -34,6 +36,15 @@ export function Navigation({ onLoginClick, onSignupClick }) {
                   background: "linear-gradient(to right, #8b5cf6, #3b82f6)",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
+                }}
+                onClick={()=>{
+                  if(isOauth) {
+                    nav('/home1')
+                    console.log('클릭')
+                  }
+                  else {
+                    nav('/')
+                  }
                 }}
               >
                 SeaU
