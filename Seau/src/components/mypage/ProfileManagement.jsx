@@ -1,35 +1,40 @@
 import React, { useState, useRef, useContext, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Edit, Save, X, Camera } from 'lucide-react';
+// UserContext 경로는 사용자 프로젝트 구조에 따라 다를 수 있습니다.
+// 이 파일을 사용하는 프로젝트에서 실제 UserContext 파일의 경로로 수정해주세요.
 import { UserContext } from '../../context/UserContext';
+
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
-// Firebase 관련 import 추가
-import { initializeApp } from 'firebase/app';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+// AWS SDK import 추가. 이 모듈이 설치되어 있지 않으면 'Could not resolve' 오류가 발생합니다.
+// npm install @aws-sdk/client-s3 또는 yarn add @aws-sdk/client-s3 를 통해 설치해야 합니다.
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-// --- Firebase 설정 (!!!여기를 본인의 Firebase 설정으로 채워주세요!!!) ---
-const firebaseConfig = {
-  apiKey: "AIzaSyBeQAtKudsAWAV027UDqmxG9n7_a_jKVfw",
-  authDomain: "seau-a0594.firebaseapp.com",
-  projectId: "seau-a0594",
-  storageBucket: "seau-a0594.firebasestorage.app",
-  messagingSenderId: "862022194486",
-  appId: "1:862022194486:web:2219a1fbd6f3e547da0f97",
-  measurementId: "G-NBPKM5SY7Z"
+// --- AWS S3 설정 (!!!여기를 본인의 AWS S3 설정으로 채워주세요!!!) ---
+// 경고: 클라이언트 측 코드에 AWS 접근 키를 직접 포함하는 것은 보안상 매우 위험합니다.
+// 실제 서비스에서는 반드시 백엔드 서버를 통해 임시 자격 증명을 발급받거나,
+// Presigned URL을 생성하여 사용하는 방식을 강력히 권장합니다.
+const awsConfig = {
+  region: "ap-southeast-2", // 예: 서울 리전 (본인의 S3 버킷 리전으로 변경)
+  bucketName: "seaucloud", // 실제 S3 버킷 이름으로 변경
+  accessKeyId: "AKIASKD5PB3ZPAOAVFRY", // 본인의 AWS Access Key ID
+  secretAccessKey: "lopehabaEv0sFTCPDcGyiI/s9fazZWRhN0euyl9x", // 본인의 AWS Secret Access Key
 };
 
-// Firebase 앱 초기화
-const app = initializeApp(firebaseConfig);
-// Firebase Storage 서비스 가져오기
-const storage = getStorage(app);
-// --- Firebase 설정 끝 ---
+// AWS S3 클라이언트 초기화
+const s3Client = new S3Client({
+  region: awsConfig.region,
+  credentials: {
+    accessKeyId: awsConfig.accessKeyId,
+    secretAccessKey: awsConfig.secretAccessKey,
+  },
+});
+// --- AWS S3 설정 끝 ---
 
 
-// 스타일 컴포넌트들은 이전과 동일하므로 생략합니다.
-// 위쪽에 정의된 styled 컴포넌트들은 그대로 사용해주세요.
-// (이전 코드에서 복사해서 붙여넣으세요)
+// 스타일 컴포넌트들은 이전과 동일합니다.
 const Card = styled.div`
   background-color: white;
   border-radius: 12px;
@@ -251,10 +256,27 @@ const ReadOnlyField = styled.div`
 const FullWidth = styled.div`
   grid-column: 1 / -1;
 `;
+
+// 메시지 표시를 위한 스타일 컴포넌트
+const MessageBar = styled.div`
+  padding: 12px 24px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 500;
+  text-align: center;
+  ${props => props.type === 'success' && `
+    background-color: #d1fae5;
+    color: #065f46;
+  `}
+  ${props => props.type === 'error' && `
+    background-color: #fee2e2;
+    color: #991b1b;
+  `}
+`;
 // --- styled 컴포넌트 끝 ---
 
 export function ProfileManagement() {
-  const { userId } = useContext(UserContext);
+  const { userId } = useContext(UserContext); // UserContext는 상위 컴포넌트에서 제공되어야 합니다.
   const navigate = useNavigate();
 
   const [userData, setUserData] = useState(null);
@@ -274,6 +296,19 @@ export function ProfileManagement() {
   const fileInputRef = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null); // 사용자가 선택한 파일 객체를 저장
 
+  const [message, setMessage] = useState(''); // 사용자에게 표시할 메시지
+  const [messageType, setMessageType] = useState(''); // 메시지 타입 ('success' 또는 'error')
+
+  // 메시지를 설정하고 일정 시간 후 사라지게 하는 함수
+  const showMessage = (msg, type) => {
+    setMessage(msg);
+    setMessageType(type);
+    // setTimeout(() => { // 자동 숨김 기능을 사용하지 않으려면 이 부분을 주석 처리
+    //   setMessage('');
+    //   setMessageType('');
+    // }, 5000); // 5초 후 메시지 사라짐
+  };
+
   // --- 1. userData를 서버에서 가져와 profileData와 editData를 초기화하는 useEffect ---
   useEffect(() => {
     console.log('프로필 데이터 통신 요청');
@@ -288,7 +323,7 @@ export function ProfileManagement() {
           const initialProfile = {
             nickname: result.nickname || '',
             profileImage: result.profile_image_url || '',
-            // 백엔드에서 DATE_FORMAT을 사용해 YYYY-MM-DD 형식으로 받았다면 그대로 사용
+            // 백엔드에서 DATE_FORMAT을 사용해YYYY-MM-DD 형식으로 받았다면 그대로 사용
             // 그렇지 않다면, 이곳에서 직접 포매팅 로직을 추가해야 합니다.
             birthDate: result.birth_date ? result.birth_date.substring(0, 10) : '',
             gender: result.gender, // 서버에서 받은 문자열 그대로 사용 (예: '남자', '여자')
@@ -304,6 +339,7 @@ export function ProfileManagement() {
         })
         .catch((error) => {
           console.error('프로필 데이터 로드 오류:', error);
+          showMessage('프로필 정보를 불러오는 데 실패했습니다.', 'error');
           // navigate('/login'); // 에러 시 로그인 페이지로 리다이렉트
         });
     }
@@ -337,29 +373,44 @@ export function ProfileManagement() {
     setEditData({ ...profileData });
     setSelectedFile(null); // 수정 모드 진입 시 이전에 선택된 파일 초기화
     setIsEditing(true);
+    setMessage(''); // 메시지 초기화
   };
 
   // --- 저장 버튼 클릭 시 ---
   const handleSave = async () => {
     console.log('프로필 수정 시도');
-
     let finalProfileImageUrl = editData.profileImage; // 기본은 기존 이미지 URL 또는 미리보기 URL
 
     try {
-      // 1. 새 파일이 선택되었다면 Firebase Storage에 업로드
+      // 1. 새 파일이 선택되었다면 AWS S3에 직접 업로드
       if (selectedFile) {
-        console.log('새 프로필 이미지 업로드 중...');
-        const storageRef = ref(storage, `profile_images/${userId}/${selectedFile.name}`);
-        const uploadTask = await uploadBytes(storageRef, selectedFile);
-        finalProfileImageUrl = await getDownloadURL(uploadTask.ref);
-        console.log('Firebase 업로드 완료. URL:', finalProfileImageUrl);
+        console.log('새 프로필 이미지 업로드 중 (AWS S3 직접 업로드)...');
+        const fileExtension = selectedFile.name.split('.').pop();
+        const s3Key = `profile_images/${userId}/${Date.now()}.${fileExtension}`;
+
+        // 파일을 ArrayBuffer로 읽은 후 Uint8Array로 변환
+        const arrayBuffer = await selectedFile.arrayBuffer();
+        const bodyData = new Uint8Array(arrayBuffer);
+
+        const command = new PutObjectCommand({
+          Bucket: awsConfig.bucketName,
+          Key: s3Key,
+          Body: bodyData, // <-- 여기가 변경된 부분입니다.
+          ContentType: selectedFile.type,
+          ACL: 'public-read'
+        });
+
+        await s3Client.send(command);
+        finalProfileImageUrl = `https://${awsConfig.bucketName}.s3.${awsConfig.region}.amazonaws.com/${s3Key}`;
+        console.log('AWS S3 직접 업로드 완료. URL:', finalProfileImageUrl);
       }
+
 
       // 2. 백엔드로 전송할 데이터 구성
       const dataToSend = {
         userId: userId,
         nickname: editData.nickname,
-        profileImage: finalProfileImageUrl, // Firebase에서 받은 URL 또는 기존 URL
+        profileImage: finalProfileImageUrl, // S3에서 받은 URL 또는 기존 URL
         birth_date: editData.birthDate,
         gender: editData.gender,
         phone_number: editData.phone ? editData.phone.replace(/-/g, '') : '',
@@ -380,14 +431,14 @@ export function ProfileManagement() {
         });
         setIsEditing(false);
         setSelectedFile(null); // 업로드 완료 후 선택된 파일 초기화
-        alert('프로필이 성공적으로 업데이트되었습니다!');
+        showMessage('프로필이 성공적으로 업데이트되었습니다!', 'success');
       } else {
-        alert(`프로필 업데이트 실패: ${res.data.message || '알 수 없는 오류'}`);
+        showMessage(`프로필 업데이트 실패: ${res.data.message || '알 수 없는 오류'}`, 'error');
         console.error('프로필 업데이트 실패 (백엔드 응답):', res.data.message);
       }
     } catch (error) {
       console.error('프로필 업데이트 중 오류 발생:', error);
-      alert('프로필 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.');
+      showMessage('프로필 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
       // 오류 발생 시, 원본 프로필 이미지로 되돌리거나 사용자에게 알려주는 추가 처리
       setEditData((prev) => ({ ...prev, profileImage: profileData.profileImage }));
       setSelectedFile(null);
@@ -399,10 +450,11 @@ export function ProfileManagement() {
     setEditData({ ...profileData }); // 원본 데이터로 되돌림
     setSelectedFile(null); // 선택된 파일 초기화
     setIsEditing(false);
+    setMessage(''); // 메시지 초기화
   };
 
   // --- UI에 표시될 성별 및 MBTI 옵션 (문자열 그대로) ---
-  const genderOptions = ['남자', '여자', '기타']; // '기타' 옵션 다시 추가
+  const genderOptions = ['남자', '여자', '기타'];
   const mbtiOptions = [
     'INTJ', 'INTP', 'ENTJ', 'ENTP',
     'INFJ', 'INFP', 'ENFJ', 'ENFP',
@@ -438,6 +490,13 @@ export function ProfileManagement() {
         )}
       </CardHeader>
 
+      {/* 메시지 표시 영역 */}
+      {message && (
+        <MessageBar type={messageType}>
+          {message}
+        </MessageBar>
+      )}
+
       <CardContent>
         <AvatarContainer>
           <AvatarWrapper>
@@ -462,7 +521,7 @@ export function ProfileManagement() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  onChange={handleImageSelect} // handleImageUpload 대신 handleImageSelect 사용
+                  onChange={handleImageSelect}
                 />
               </>
             )}
