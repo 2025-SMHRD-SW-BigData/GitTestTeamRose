@@ -83,7 +83,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
                         name: tour.place_name,
                         image: tour.main_image_url,
                         description: tour.description,
-                        operatingTime: tour.operating_Time,
+                        operatingTime: tour.operating_time,
                         phone: tour.phone_number,
                         type: tour.place_type
                     }
@@ -113,7 +113,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
             return dist < 5 // 5km 이내만 표시
         })
 
-        const nearbyBeaches = markerList.filter((place)=>{
+        const nearbyBeaches = markerList.filter((place) => {
             const dist = getDistance(
                 selectedLocation.lat,
                 selectedLocation.lng,
@@ -142,9 +142,10 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
 
     return (
         <Map
-            center={mapCenter ?? { lat: 33.36167, lng: 126.52917 }}
+            key={`${mapCenter.lat}-${mapCenter.lng}-${mapLevel}`} // 위치 바뀔 때 명확히 리턴
+            center={mapCenter}
             className='map'
-            level={mapLevel ?? 9}
+            level={mapLevel}
             onClick={handleMapClick}
         >
             {/* beach 마커 */}
@@ -163,9 +164,9 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
                 <MapMarker
                     key={idx}
                     position={{ lat: marker.lat, lng: marker.lng }}
-                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}
+                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image, marker)}
                 >
-                    <div style={{ color: marker.type==='beach' ? 'black' : 'orange' }}>{marker.name}</div>
+                    <div style={{ color: marker.type === 'beach' ? 'black' : 'orange' }}>{marker.name}</div>
                 </MapMarker>
             ))}
 

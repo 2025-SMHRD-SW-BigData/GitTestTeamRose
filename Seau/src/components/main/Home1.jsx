@@ -19,11 +19,16 @@ const Home1 = () => {
   const [isMarkerClick, setIsMarkerClick] = useState(false);
   const [mapCenter, setMapCenter] = useState({ lat: 33.36167, lng: 126.52917 });
   const [mapLevel, setMapLevel] = useState(9);
+  const [selectedPlace, setSelectedPlace] = useState(null)
 
 
   // 위치 선택 시 데이터 로드
-  const handleLocationSelect = async (location, imageUrl) => {
+  const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
+    if (selectedLocation?.lat === location.lat && selectedLocation?.lng === location.lng) {
+      return
+    }
     setSelectedLocation(location);
+    setSelectedPlace(placeInfo)
     setLoading(true);
     setLeftPanelOpen(true);
     setRightPanelOpen(true);
@@ -33,6 +38,7 @@ const Home1 = () => {
     setMapCenter(location);  // 클릭한 위치로 중심 이동
     setMapLevel(imageUrl ? 3 : 9)
     // console.log(mapLevel)
+    console.log(placeInfo)
 
     try {
       // 미디어 데이터 가져오기
@@ -51,14 +57,17 @@ const Home1 = () => {
     }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     console.log(mapLevel)
   }, [mapLevel])
 
   // 이미지 클릭시 위치 저장
-  const handleImageClick = (location, imageUrl) => {
-    const { lat, lng } = location
-    handleLocationSelect(location, imageUrl)
+  const handleImageClick = (location, imageUrl, placeInfo) => {
+    handleLocationSelect(location, imageUrl, placeInfo)
+  }
+
+  const handleCardClick = (location, imageUrl, placeInfo) => {
+    handleLocationSelect(location, imageUrl, placeInfo)
   }
 
   // KakaoMap에서 근처 관광지 목록 받기
@@ -110,17 +119,38 @@ const Home1 = () => {
             ×
           </button>
         </div>
+        {selectedPlace && (
+
+          <div className="item">
+            <div className="itemName">{selectedPlace.name}</div>
+            {selectedLocation && (
+              <div>
+                <div className='itemInfo2'>
+
+                  <p>{selectedPlace.description}</p>
+                  <p>{selectedPlace.operatingTime}</p>
+                  <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : '' }</p>
+                </div>
+
+                {/* <div className="itemInfo">
+                  거리: {getDistance(selectedLocation.lat, selectedLocation.lng, selectedPlace.lat, selectedPlace.lng).toFixed(2)} km
+                </div> */}
+              </div>
+            )}
+          </div>
+        )}
 
         {loading ? (
           <div className='loading'>로딩 중...</div>
-          ) : selectedLocation && nearbyAttractions.length > 0 ? (
+        ) : selectedLocation && nearbyAttractions.length > 0 ? (
           <div className='panelContent'>
             {/* 관광지 */}
             <div className='section'>
               <h4>🏛️ 관광지</h4>
               {categori.attractions.length > 0 ? (
-                categori.attractions.map((place, idx) => (
-                  <div key={idx} className='item'>
+                categori.attractions.filter((place) => place.name !== selectedPlace?.name)
+                .map((place, idx) => (
+                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
                     <div className='itemName'>{place.name}</div>
                     {/* 거리 계산 (km 단위로 소수점 2자리까지) */}
                     <div className='itemInfo'>
@@ -136,8 +166,9 @@ const Home1 = () => {
             <div className='section'>
               <h4>🍽️ 맛집</h4>
               {categori.restaurants.length > 0 ? (
-                categori.restaurants.map((place, idx) => (
-                  <div key={idx} className='item'>
+                categori.restaurants.filter((place) => place.name !== selectedPlace?.name)
+                .map((place, idx) => (
+                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
                     <div className='itemName'>{place.name}</div>
                     <div className='itemInfo'>
                       거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
@@ -152,8 +183,9 @@ const Home1 = () => {
             <div className='section'>
               <h4>🎪 레저</h4>
               {categori.activities.length > 0 ? (
-                categori.activities.map((place, idx) => (
-                  <div key={idx} className='item'>
+                categori.activities.filter((place) => place.name !== selectedPlace?.name)
+                .map((place, idx) => (
+                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
                     <div className='itemName'>{place.name}</div>
                     <div className='itemInfo'>
                       거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
@@ -166,9 +198,9 @@ const Home1 = () => {
             </div>
           </div>
         ) : (
-        <div className='placeholder'>
-          지도에서 위치를 선택해주세요
-        </div>
+          <div className='placeholder'>
+            지도에서 위치를 선택해주세요
+          </div>
         )}
       </div>
 
@@ -230,7 +262,7 @@ const Home1 = () => {
                       alt={`근처 장소 이미지 ${idx + 1}`}
                       className='mediaImage'
                       style={{ cursor: 'pointer' }}
-                      onClick={() => handleImageClick({lat:place.lat, lng:place.lng}, place.image)}
+                      onClick={() => handleImageClick({ lat: place.lat, lng: place.lng }, place.image, place)}
                     />
                   ))}
                 </div>

@@ -1,8 +1,11 @@
 import React from 'react'
+import { AuthSidebar } from './AuthSiderbar'
 
-const Start = () => {
+const Start = ({isOpen, onClose, initialMode}) => {
   return (
-    <div>Start</div>
+    <div>
+      <AuthSidebar isOpen={isOpen} onClose={onClose} initialMode={initialMode}/>
+    </div>
   )
 }
 

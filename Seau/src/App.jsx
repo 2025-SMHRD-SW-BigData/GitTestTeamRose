@@ -11,9 +11,9 @@ import Placeadd from './components/Placeadd'
 import { UserContext } from './context/UserContext'
 import Weather from './components/main/Weather'
 import { Navigation } from "./components/Navigation"
-import { AuthSidebar } from "./components/Start/AuthSiderbar"
 import {useNavigate} from 'react-router-dom'
 import { ProfileManagement } from './components/mypage/ProfileManagement'
+import Start from './components/Start/Start'
 import './App.css'
 
 
@@ -68,7 +68,7 @@ function App() {
         <Route path='/login' element={<Login onLoginClick={openSidebar}></Login>}></Route>
         <Route path='/mypage' element={<Mypage ></Mypage>}></Route>
         <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
-        <Route path='/' element={<AuthSidebar isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
+        <Route path='/' element={<Start isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
         <Route path='/placeadd' element={<Placeadd></Placeadd>}></Route>
         <Route path='/profilemanagement' element = {<ProfileManagement></ProfileManagement>}></Route>
       </Routes>
