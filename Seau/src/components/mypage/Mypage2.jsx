@@ -230,11 +230,11 @@ export default function MyPage() {
   const [authMode, setAuthMode] = useState('login');
   const [activeSection, setActiveSection] = useState('profile');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [userData, setUserData] = useState(null);
   const nav = useNavigate();
   const { userId, setUserId } = useContext(UserContext);
   const { isOauth } = useContext(UserContext);
   console.log(userId, isOauth)
+  const {userData, setUserData} = useContext(UserContext);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 1024);
@@ -251,7 +251,7 @@ export default function MyPage() {
       })
       .then((res) => {
         console.log(res.data.data);
-        const result = res.data.data;
+        const result = res.data.data.user;
         setUserData(result);
         console.log(userData);
       })

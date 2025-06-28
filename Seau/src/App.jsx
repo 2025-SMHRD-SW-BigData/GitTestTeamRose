@@ -14,6 +14,7 @@ import {useNavigate} from 'react-router-dom'
 import { ProfileManagement } from './components/mypage/ProfileManagement'
 import Start from './components/Start/Start'
 import './App.css'
+import ScheduleManagement from './components/mypage/ScheduleMangement'
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarMode, setSidebarMode] = useState("login")
   const [userData, setUserData] = useState(null);
+  const [placeData, setPlaceData] = useState(null);
   
 
   const openSidebar = (mode) => {
@@ -36,7 +38,7 @@ function App() {
   }
 
   return (
-    <UserContext.Provider value={{ isOauth, setIsOauth, userId, setUserId, userData, setUserData }}>
+    <UserContext.Provider value={{ isOauth, setIsOauth, userId, setUserId, userData, setUserData, placeData, setPlaceData }}>
       {/* 네비게이션 */}
       <Navigation
         onLoginClick={() => {
@@ -58,6 +60,7 @@ function App() {
           }
         }}
       />
+      
       <Routes>
         <Route path='/weather' element={<Weather></Weather>}></Route>
         <Route path='/home' element={<Home></Home>}></Route>
@@ -69,6 +72,7 @@ function App() {
         <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
         <Route path='/' element={<Start isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
         <Route path='/profilemanagement' element = {<ProfileManagement></ProfileManagement>}></Route>
+        <Route path='/schedule' element= {<ScheduleManagement></ScheduleManagement>}></Route>
       </Routes>
 
     </UserContext.Provider>

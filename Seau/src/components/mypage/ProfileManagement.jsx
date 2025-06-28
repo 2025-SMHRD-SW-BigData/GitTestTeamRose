@@ -316,7 +316,7 @@ export function ProfileManagement() {
       axios
         .post('http://localhost:3001/mypage', { userId: userId })
         .then((res) => {
-          const result = res.data.data;
+          const result = res.data.data.user;
           console.log('서버에서 받은 userData:', result);
 
           // 서버에서 받은 데이터를 기반으로 프로필 데이터 초기화
