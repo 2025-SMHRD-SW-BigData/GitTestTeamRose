@@ -7,6 +7,14 @@ import getDistance from './getDistance'
 import '../../style/Seau.css'
 // 메인 App 컴포넌트
 
+const busyColor = {
+  원활: 'item',
+  혼잡: 'itemBusy',
+  이용불가: 'itemDont',
+}
+
+
+
 const Home1 = () => {
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [mediaData, setMediaData] = useState(null);
@@ -21,7 +29,6 @@ const Home1 = () => {
   const [mapLevel, setMapLevel] = useState(9);
   const [selectedPlace, setSelectedPlace] = useState(null)
 
-
   // 위치 선택 시 데이터 로드
   const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
     if (selectedLocation?.lat === location.lat && selectedLocation?.lng === location.lng) {
@@ -34,12 +41,12 @@ const Home1 = () => {
     setRightPanelOpen(true);
     // 마커 클릭인지 판단
     setIsMarkerClick(!!imageUrl)
-
+    
     setMapCenter(location);  // 클릭한 위치로 중심 이동
     setMapLevel(imageUrl ? 3 : 9)
     // console.log(mapLevel)
     console.log(placeInfo)
-
+  
     try {
       // 미디어 데이터 가져오기
       if (imageUrl) {
@@ -121,7 +128,7 @@ const Home1 = () => {
         </div>
         {selectedPlace && (
           <div className='panelContent'>
-          <div className="item">
+          <div className={`${busyColor[selectedPlace.busy]}`}>
             <div className="itemName">{selectedPlace.name}</div>
             {selectedLocation && (
               <div>
@@ -130,6 +137,7 @@ const Home1 = () => {
                   <p>{selectedPlace.description}</p>
                   <p>{selectedPlace.operatingTime}</p>
                   <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : '' }</p>
+                  <p>{selectedPlace.busy ? `${selectedPlace.busy}` : '' }</p>
                 </div>
 
                 {/* <div className="itemInfo">

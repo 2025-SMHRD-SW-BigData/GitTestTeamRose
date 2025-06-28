@@ -1,190 +1,195 @@
 .card {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e5e7eb;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
 }
 
 .card-header {
-  padding: 24px 24px 0 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+    padding: 24px 24px 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .card-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #111827;
+    font-size: 24px;
+    font-weight: bold;
+    color: #111827;
 }
 
 .button {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
 }
 
 .button.primary {
-  background-color: #7c3aed;
-  color: white;
+    background-color: #7c3aed;
+    color: white;
 }
+
 .button.primary:hover {
-  background-color: #6d28d9;
+    background-color: #6d28d9;
 }
 
 .button.success {
-  background-color: #059669;
-  color: white;
+    background-color: #059669;
+    color: white;
 }
+
 .button.success:hover {
-  background-color: #047857;
+    background-color: #047857;
 }
 
 .button.outline {
-  background-color: transparent;
-  color: #374151;
-  border: 1px solid #d1d5db;
+    background-color: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
 }
+
 .button.outline:hover {
-  background-color: #f9fafb;
+    background-color: #f9fafb;
 }
 
 .card-content {
-  padding: 24px;
+    padding: 24px;
 }
 
 .avatar-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
 }
 
 .avatar-wrapper {
-  position: relative;
+    position: relative;
 }
 
 .avatar {
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  overflow: hidden;
-  background-color: #f3f4f6;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .avatar-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
 }
 
 .avatar-fallback {
-  font-size: 32px;
-  font-weight: bold;
-  color: #6b7280;
+    font-size: 32px;
+    font-weight: bold;
+    color: #6b7280;
 }
 
 .camera-button {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: #7c3aed;
-  color: white;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background-color 0.2s;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #7c3aed;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
 }
+
 .camera-button:hover {
-  background-color: #6d28d9;
+    background-color: #6d28d9;
 }
 
 .hidden-input {
-  display: none;
+    display: none;
 }
 
 .help-text {
-  font-size: 14px;
-  color: #6b7280;
-  text-align: center;
+    font-size: 14px;
+    color: #6b7280;
+    text-align: center;
 }
 
 .grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 24px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
 }
 
 .grid-md-2 {
-  grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
 }
 
 .form-group {
-  display: flex;
-  flex-direction: column;
+    display: flex;
+    flex-direction: column;
 }
 
 .label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 8px;
 }
 
 .input,
 .select,
 .textarea {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  font-size: 16px;
-  outline: none;
-  transition: all 0.2s;
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-size: 16px;
+    outline: none;
+    transition: all 0.2s;
 }
 
 .input:focus,
 .select:focus,
 .textarea:focus {
-  border-color: #7c3aed;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
 }
 
 .input:disabled,
 .select:disabled,
 .textarea:disabled {
-  background-color: #f9fafb;
-  cursor: not-allowed;
+    background-color: #f9fafb;
+    cursor: not-allowed;
 }
 
 .textarea {
-  resize: none;
-  font-family: inherit;
+    resize: none;
+    font-family: inherit;
 }
 
 .readonly-field {
-  padding: 12px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  color: #374151;
+    padding: 12px;
+    background-color: #f9fafb;
+    border-radius: 8px;
+    color: #374151;
 }
 
 .full-width {
-  grid-column: 1 / -1;
+    grid-column: 1 / -1;
 }
