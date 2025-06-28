@@ -85,7 +85,8 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
                         description: tour.description,
                         operatingTime: tour.operating_time,
                         phone: tour.phone_number,
-                        type: tour.place_type
+                        type: tour.place_type,
+                        busy: tour.busy
                     }
                 })
                 setPlaceMarkerList(provideTours.filter(Boolean))

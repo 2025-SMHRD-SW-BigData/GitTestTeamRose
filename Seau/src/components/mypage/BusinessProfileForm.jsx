@@ -14,6 +14,7 @@ const BusinessProfileForm = ({ userId }) => {
         placeType: '',
         operationHours: '',
         phoneNumber: '',
+        busy: '',
     })
 
 
@@ -21,7 +22,7 @@ const BusinessProfileForm = ({ userId }) => {
     const [hasBusiness, setHasBusiness] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [message, setMessage] = useState(''); // 사용자에게 메시지를 보여주기 위한 상태
-    const [messageType, setMessageType] = useState('');
+    const [messageType, setMessageType] = useState('info');
 
 
     // 🔄 사업체 정보 불러오기
@@ -38,8 +39,9 @@ const BusinessProfileForm = ({ userId }) => {
                         address: place.address || '',
                         mainImageUrl: place.main_image_url || '',
                         placeType: place.place_type || '',
-                        operationHours: place.operation_hours || '',
+                        operationHours: place.operating_time || '',
                         phoneNumber: place.phone_number || '',
+                        busy: place.busy || '',
                     });
                     setHasBusiness(true);
                 } else {
@@ -65,7 +67,11 @@ const BusinessProfileForm = ({ userId }) => {
         setMessageType('info');
 
         try {
-            const response = await axios.post('http://localhost:3001/place/add', {
+            const url = hasBusiness
+            ? 'http://localhost:3001/place/update'
+            : 'http://localhost:3001/place/add';
+
+            const response = await axios.post(url, {
                 userId,
                 placeName: formData.placeName,
                 description: formData.description,
@@ -74,6 +80,7 @@ const BusinessProfileForm = ({ userId }) => {
                 placeType: formData.placeType,
                 operationHours: formData.operationHours,
                 phone_number: formData.phoneNumber,
+                busy: formData.busy,
             });
 
             if (response.data.success) {
@@ -97,7 +104,7 @@ const BusinessProfileForm = ({ userId }) => {
         setIsEditing(false);
         setMessage('');
     };
- console.log(userId)
+    console.log(userId)
     // 🔽 사업체가 없을 때 등록 버튼만 보임
     if (!hasBusiness && !isEditing) {
         return (
@@ -141,12 +148,13 @@ const BusinessProfileForm = ({ userId }) => {
                 <form onSubmit={handleSubmit}>
                     {[
                         { label: '장소 이름', field: 'placeName', type: 'text' },
-                        { label: '설명', field: 'description', type: 'textarea' },
                         { label: '주소', field: 'address', type: 'text' },
                         { label: '메인 이미지 URL', field: 'mainImageUrl', type: 'url' },
                         { label: '장소 타입', field: 'placeType', type: 'text' },
                         { label: '운영 시간', field: 'operationHours', type: 'text' },
                         { label: '연락처', field: 'phoneNumber', type: 'tel' },
+                        { label: '설명', field: 'description', type: 'textarea' },
+                        { label: '혼잡도', field: 'busy', type: 'select' },
                     ].map(({ label, field, type }) => (
                         <div className="form-group" key={field}>
                             <label className="label">{label}</label>
@@ -157,7 +165,20 @@ const BusinessProfileForm = ({ userId }) => {
                                     onChange={(e) => handleChange(field, e.target.value)}
                                     disabled={!isEditing}
                                     rows="3"
+                                    style={{ marginBottom: '15px' }}
                                 />
+                            ) : type === 'select' ? (
+                                <select
+                                    className="input"
+                                    value={formData[field]}
+                                    onChange={(e) => handleChange(field, e.target.value)}
+                                    disabled={!isEditing}
+                                    style={{ marginBottom: '15px' }}
+                                >
+                                    <option value="원활">원활</option>
+                                    <option value="혼잡">혼잡</option>
+                                    <option value="이용불가">이용불가</option>
+                                </select>
                             ) : (
                                 <input
                                     className="input"
@@ -166,6 +187,7 @@ const BusinessProfileForm = ({ userId }) => {
                                     onChange={(e) => handleChange(field, e.target.value)}
                                     disabled={!isEditing}
                                     required={field === 'placeName' || field === 'address'}
+                                    style={{ marginBottom: '15px' }}
                                 />
                             )}
                         </div>

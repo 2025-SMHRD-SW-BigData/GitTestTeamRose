@@ -132,6 +132,20 @@
   border-radius: 8px;
   border-left: 3px solid #3498db;
 }
+.itemBusy {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #ffeaa7;
+}
+.itemDont {
+  padding: 10px;
+  margin-bottom: 8px;
+  background: rgba(52, 152, 219, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #fab1a0;
+}
 
 .itemName {
   font-weight: bold;
