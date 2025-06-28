@@ -21,7 +21,7 @@ const BusinessProfileForm = ({ userId }) => {
     const [hasBusiness, setHasBusiness] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [message, setMessage] = useState(''); // 사용자에게 메시지를 보여주기 위한 상태
-    const [messageType, setMessageType] = useState('');
+    const [messageType, setMessageType] = useState('info');
 
 
     // 🔄 사업체 정보 불러오기
