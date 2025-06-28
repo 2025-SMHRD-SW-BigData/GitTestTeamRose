@@ -3,10 +3,11 @@ import styled from '@emotion/styled';
 import { ProfileManagement } from './ProfileManagement';
 import { PasswordChange } from './PasswordChange';
 import { CustomerSupport } from './CustomerSupport';
-import { User, Lock, HelpCircle } from 'lucide-react';
+import { User, Lock, HelpCircle, Calendar } from 'lucide-react';
 import { UserContext } from '../../context/UserContext';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom'
+import ScheduleMangement from './ScheduleMangement';
 
 // Container 전체 페이지 배경과 패딩
 const Container = styled.div`
@@ -272,6 +273,7 @@ export default function MyPage() {
     { id: 'profile', label: '프로필 관리', icon: <User size={20} /> },
     { id: 'password', label: '비밀번호 변경', icon: <Lock size={20} /> },
     { id: 'support', label: '고객센터', icon: <HelpCircle size={20} /> },
+    { id: 'schedule', label: '일정생성', icon: <Calendar size={20} /> },
   ];
 
   const renderContent = () => {
@@ -282,6 +284,8 @@ export default function MyPage() {
         return <PasswordChange />;
       case 'support':
         return <CustomerSupport />;
+      case 'schedule':
+        return <ScheduleMangement />;
       default:
         return <ProfileManagement />;
     }
