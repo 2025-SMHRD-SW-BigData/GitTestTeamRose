@@ -1,13 +1,16 @@
 import React from 'react'
 import { AuthSidebar } from './AuthSiderbar'
-import { AppBar, Toolbar, Typography, Button, Box, Container } from "@mui/material";
-import { motion, AnimatePresence } from "framer-motion";
+import { Typography } from "@mui/material";
+import { motion} from "framer-motion";
 
 const Start = ({ isOpen, onClose, initialMode }) => {
   return (
-    <body style={{ backgroundColor: 'black', height: '5000px' }}>
-      <AuthSidebar isOpen={isOpen} onClose={onClose} initialMode={initialMode} />
-      <br />
+    <div>
+
+        <AuthSidebar isOpen={isOpen} onClose={onClose} initialMode={initialMode} />
+
+      <div style={{ backgroundColor: 'black', height: '5000px' }}>
+        <br />
       <br />
 
       <motion.div
@@ -64,7 +67,8 @@ const Start = ({ isOpen, onClose, initialMode }) => {
         <h1>ㅎㅇ</h1>
       </motion.div>
 
-    </body>
+      </div>
+    </div>
   )
 }
 
