@@ -15,7 +15,8 @@ export default function Join({ formData, onChange }) {
       .post("http://localhost:3001", {
         id: formData.id,
         pw: formData.password,
-        name: formData.name
+        name: formData.name,
+        usertype: formData.userType
       })
       .then((res) => {
         if (res.data === "가입성공") {
@@ -31,6 +32,7 @@ export default function Join({ formData, onChange }) {
       })
       .finally(() => setLoading(false));
   };
+  console.log(formData.userType)
 
   return (
     <form
@@ -170,6 +172,46 @@ export default function Join({ formData, onChange }) {
               boxSizing: "border-box",
             }}
           />
+        </Box>
+      </div>
+
+      <div>
+        <Typography variant="body2" sx={{ mb: 0.5 }}>
+          유저 타입
+        </Typography>
+        <Box sx={{ position: "relative" }}>
+          <User
+            size={20}
+            style={{
+              position: "absolute",
+              left: 12,
+              top: "50%",
+              transform: "translateY(-50%)",
+              color: "#9ca3af",
+            }}
+          />
+          <select
+            value={formData.userType}
+            onChange={(e) => onChange("userType", e.target.value)}
+            required
+            style={{
+              width: "100%",
+              padding: "10px 12px 10px 36px",
+              borderRadius: 8,
+              border: "1px solid #d1d5db",
+              outline: "none",
+              fontSize: 16,
+              boxSizing: "border-box",
+              appearance: "none", // 브라우저 기본 스타일 제거
+              backgroundColor: "#fff",
+            }}
+          >
+            <option value="" disabled>
+              사용자 유형을 선택하세요
+            </option>
+            <option value='0'>일반 사용자</option>
+            <option value='1'>사업자</option>
+          </select>
         </Box>
       </div>
 

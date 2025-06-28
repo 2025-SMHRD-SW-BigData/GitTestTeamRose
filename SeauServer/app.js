@@ -24,12 +24,12 @@ let conn = mysql.createConnection({
 // http://localhost:3001
 // 회원가입
 app.post('/', (req, res)=>{
-    const {id, pw, nick, gender, name, birthDay, introduce, phoneNumber,mbti} = req.body
+    const {id, pw, nick, gender, name, birthDay, introduce, phoneNumber,mbti, usertype} = req.body
     console.log('접근 확인!')
-    let sql = 'insert into users(user_id_name, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce,mbti) values(?,?,?,?,?,?,?,?,?)';
+    let sql = 'insert into users(user_id, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce,mbti, user_type) values(?,?,?,?,?,?,?,?,?,?)';
     
     conn.connect(); // db 연결통로 열기
-    conn.query(sql, [id, pw,name, phoneNumber,nick,birthDay,gender,introduce,mbti],(err,rows)=>{
+    conn.query(sql, [id, pw,name, phoneNumber,nick,birthDay,gender,introduce,mbti, usertype],(err,rows)=>{
         if(!err) {
             console.log('입력성공')
             res.send("가입성공")
@@ -46,7 +46,7 @@ app.post('/', (req, res)=>{
 // 로그인
 app.post('/login', (req,res) => {
     const {id, pw} = req.body;
-    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    let sql = 'select * from users where user_id = ? and user_pw = ?';
     
     console.log('로그인 요청')
     console.log(req.body);
@@ -72,7 +72,7 @@ app.post('/login', (req,res) => {
 app.post('/mypage', (req,res) => {
     const {userId} = req.body;
 
-    let sql = `select user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score from users where user_id_name = ?;`;
+    let sql = `select user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score, user_type from users where user_id = ?;`;
     
     console.log('마이페이지 정보 요청')
     console.log(req.body);
@@ -99,7 +99,7 @@ app.post('/profileupdate', (req,res) => {
     console.log(req.body);
     const {userId, nickname, profileImage, birth_date, gender, phone_number, mbti, introduce} = req.body
     console.log(userId);
-    let sql = 'update users set nickname = ?, profile_image_url = ? , birth_date = ?, gender = ?, phone_number = ?,mbti = ?,introduce=? where user_id_name = ?';
+    let sql = 'update users set nickname = ?, profile_image_url = ? , birth_date = ?, gender = ?, phone_number = ?,mbti = ?,introduce=? where user_id = ?';
     conn.connect();
     conn.query(sql,[nickname, profileImage, birth_date, gender, phone_number, mbti, introduce, userId] ,(err, rows)=>{
         if(!err){
@@ -116,7 +116,7 @@ app.post('/pwchange',(req,res) => {
     console.log('비밀번호 변경 요청');
     console.log(req.body);
     const {userId, currentPassword, newPassword} = req.body;
-    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    let sql = 'select * from users where user_id = ? and user_pw = ?';
     
     console.log(req.body);
     
@@ -124,7 +124,7 @@ app.post('/pwchange',(req,res) => {
     conn.query(sql, [userId,currentPassword],(err,rows) => {
         if(!err) {
             if(rows.length>0) {
-                let sql2 = 'update users set user_pw = ? where user_id_name = ?'
+                let sql2 = 'update users set user_pw = ? where user_id = ?'
                 conn.query(sql2, [newPassword, userId],(err,rows) => {
                     if(!err) {
                         console.log(rows);
@@ -176,7 +176,7 @@ app.get('/place/tour', (req,res)=>{
 })
 
 app.post('/place/add', async (req, res) => {
-    const { placeName, description, address, mainImageUrl, placeType, operationHours, phone_number } = req.body;
+    const { userId, placeName, description, address, mainImageUrl, placeType, operationHours, phone_number } = req.body;
     console.log('새로운 장소 추가 요청:', req.body);
 
     let latitude = null;
@@ -205,10 +205,10 @@ app.post('/place/add', async (req, res) => {
 
     // 데이터베이스에 장소 정보 저장
     const sql = `
-        INSERT INTO place (place_name, description, address, latitude, longitude, main_image_url, place_type, operating_time, phone_number)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)
+        INSERT INTO place (user_id, place_name, description, address, latitude, longitude, main_image_url, place_type, operating_time, phone_number)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    const values = [placeName, description, address, latitude, longitude, mainImageUrl, placeType, operationHours, phone_number];
+    const values = [userId, placeName, description, address, latitude, longitude, mainImageUrl, placeType, operationHours, phone_number];
 
     conn.query(sql, values, (err, result) => {
         if (!err) {
@@ -220,5 +220,38 @@ app.post('/place/add', async (req, res) => {
         }
     });
 });
+
+app.post('/place/get', async (req, res)=>{
+    const {userId} = req.body
+    if (!userId){
+        return res.status(400).json({sucess:false, message:'userId가 필요합니다'})
+    }
+    try {
+    const [rows] = await db.query(
+      `SELECT 
+         place_name, 
+         description, 
+         address, 
+         main_image_url, 
+         place_type, 
+         operation_time, 
+         phone_number 
+       FROM place 
+       WHERE user_id = ? 
+       LIMIT 1`, 
+      [userId]
+    );
+
+    if (rows.length === 0) {
+      return res.status(200).json({ success: true, place: null }); // 등록된 사업체 없음
+    }
+
+    return res.status(200).json({ success: true, place: rows[0] });
+
+  } catch (err) {
+    console.error('사업체 정보 조회 오류:', err);
+    res.status(500).json({ success: false, message: '서버 오류 발생' });
+  }
+})
 
 app.listen(3001)
