@@ -120,7 +120,7 @@ const Home1 = () => {
           </button>
         </div>
         {selectedPlace && (
-
+          <div className='panelContent'>
           <div className="item">
             <div className="itemName">{selectedPlace.name}</div>
             {selectedLocation && (
@@ -137,6 +137,7 @@ const Home1 = () => {
                 </div> */}
               </div>
             )}
+          </div>
           </div>
         )}
 
