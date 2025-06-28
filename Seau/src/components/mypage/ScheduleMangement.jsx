@@ -184,6 +184,8 @@ const NoScheduleMessage = styled.p`
 
 export default function ScheduleManagement() {
     const { userId } = useContext(UserContext); // UserContext에서 userId 가져오기
+    const { userData} = useContext(UserContext);
+    console.log(userData?.user_type);
 
     const [scheduleData, setScheduleData] = useState({
         title: '',

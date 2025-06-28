@@ -230,7 +230,8 @@ export default function MyPage() {
   const [authMode, setAuthMode] = useState('login');
   const [activeSection, setActiveSection] = useState('profile');
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
-  const [userData, setUserData] = useState(null);
+  const {userData, setUserData}= useContext(UserContext);
+  const {placeData, setPlaceData} = useContext(UserContext);
   const nav = useNavigate();
   const { userId, setUserId } = useContext(UserContext);
   const { isOauth } = useContext(UserContext);
@@ -250,8 +251,9 @@ export default function MyPage() {
         
       })
       .then((res) => {
-        console.log(res.data.data);
+        console.log(res.data.data.user);
         const result = res.data.data;
+        console.log(res.data);
         setUserData(result);
         console.log(userData);
       })
