@@ -8,6 +8,7 @@ import { UserContext } from '../../context/UserContext';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom'
 import ScheduleMangement from './ScheduleMangement';
+import BusinessProfileForm from './BusinessProfileForm';
 
 // Container 전체 페이지 배경과 패딩
 const Container = styled.div`
@@ -273,13 +274,19 @@ export default function MyPage() {
     { id: 'profile', label: '프로필 관리', icon: <User size={20} /> },
     { id: 'password', label: '비밀번호 변경', icon: <Lock size={20} /> },
     { id: 'support', label: '고객센터', icon: <HelpCircle size={20} /> },
-    { id: 'schedule', label: '일정생성', icon: <Calendar size={20} /> },
+    { id: 'schedule', label: '스케줄 생성', icon: <Calendar size={20} /> },
   ];
 
   const renderContent = () => {
+    if(!userData) return null;
+
     switch (activeSection) {
       case 'profile':
-        return <ProfileManagement />;
+        if(userData.user_type === 1){
+          return <BusinessProfileForm userId={userData.user_id} />
+        } else {
+          return <ProfileManagement />;
+        }
       case 'password':
         return <PasswordChange />;
       case 'support':

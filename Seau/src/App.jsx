@@ -7,7 +7,6 @@ import Login from './components//Start/Login'
 import Mypage from './components/mypage/Mypage'
 import Mypage2 from './components/mypage/Mypage2'
 import Home1 from './components/main/Home1'
-import Placeadd from './components/Placeadd'
 import { UserContext } from './context/UserContext'
 import Weather from './components/main/Weather'
 import { Navigation } from "./components/Navigation"
@@ -69,7 +68,6 @@ function App() {
         <Route path='/mypage' element={<Mypage ></Mypage>}></Route>
         <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
         <Route path='/' element={<Start isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
-        <Route path='/placeadd' element={<Placeadd></Placeadd>}></Route>
         <Route path='/profilemanagement' element = {<ProfileManagement></ProfileManagement>}></Route>
       </Routes>
 
