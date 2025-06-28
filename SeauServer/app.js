@@ -26,7 +26,7 @@ let conn = mysql.createConnection({
 app.post('/', (req, res)=>{
     const {id, pw, nick, gender, name, birthDay, introduce, phoneNumber,mbti} = req.body
     console.log('접근 확인!')
-    let sql = 'insert into users(user_id_name, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce,mbti) values(?,?,?,?,?,?,?,?,?)';
+    let sql = 'insert into users(user_id, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce,mbti) values(?,?,?,?,?,?,?,?,?)';
     
     conn.connect(); // db 연결통로 열기
     conn.query(sql, [id, pw,name, phoneNumber,nick,birthDay,gender,introduce,mbti],(err,rows)=>{
@@ -46,7 +46,7 @@ app.post('/', (req, res)=>{
 // 로그인
 app.post('/login', (req,res) => {
     const {id, pw} = req.body;
-    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    let sql = 'select * from users where user_id = ? and user_pw = ?';
     
     console.log('로그인 요청')
     console.log(req.body);
@@ -72,7 +72,7 @@ app.post('/login', (req,res) => {
 app.post('/mypage', (req,res) => {
     const {userId} = req.body;
 
-    let sql = `select user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score from users where user_id_name = ?;`;
+    let sql = `select user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score from users where user_id = ?;`;
     
     console.log('마이페이지 정보 요청')
     console.log(req.body);
@@ -99,7 +99,7 @@ app.post('/profileupdate', (req,res) => {
     console.log(req.body);
     const {userId, nickname, profileImage, birth_date, gender, phone_number, mbti, introduce} = req.body
     console.log(userId);
-    let sql = 'update users set nickname = ?, profile_image_url = ? , birth_date = ?, gender = ?, phone_number = ?,mbti = ?,introduce=? where user_id_name = ?';
+    let sql = 'update users set nickname = ?, profile_image_url = ? , birth_date = ?, gender = ?, phone_number = ?,mbti = ?,introduce=? where user_id = ?';
     conn.connect();
     conn.query(sql,[nickname, profileImage, birth_date, gender, phone_number, mbti, introduce, userId] ,(err, rows)=>{
         if(!err){
@@ -116,7 +116,7 @@ app.post('/pwchange',(req,res) => {
     console.log('비밀번호 변경 요청');
     console.log(req.body);
     const {userId, currentPassword, newPassword} = req.body;
-    let sql = 'select * from users where user_id_name = ? and user_pw = ?';
+    let sql = 'select * from users where user_id = ? and user_pw = ?';
     
     console.log(req.body);
     
@@ -124,7 +124,7 @@ app.post('/pwchange',(req,res) => {
     conn.query(sql, [userId,currentPassword],(err,rows) => {
         if(!err) {
             if(rows.length>0) {
-                let sql2 = 'update users set user_pw = ? where user_id_name = ?'
+                let sql2 = 'update users set user_pw = ? where user_id = ?'
                 conn.query(sql2, [newPassword, userId],(err,rows) => {
                     if(!err) {
                         console.log(rows);
