@@ -135,16 +135,39 @@
 .itemBusy {
   padding: 10px;
   margin-bottom: 8px;
-  background: rgba(52, 152, 219, 0.1);
+  background: #fff4e6;
   border-radius: 8px;
   border-left: 3px solid #ffeaa7;
 }
 .itemDont {
   padding: 10px;
   margin-bottom: 8px;
-  background: rgba(52, 152, 219, 0.1);
+  background: #ffeaea;
   border-radius: 8px;
   border-left: 3px solid #fab1a0;
+}
+
+.busyStatus {
+  font-weight: bold;
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  display: inline-block;
+  font-size: 14px;
+  background-color: rgba(52, 152, 219, 0.1); /* 기본 배경 */
+}
+
+/* 상태별 색상 강조 */
+.item .busyStatus {
+  background-color: rgba(52, 152, 219, 0.2); /* 원활 - 연한 파랑 */
+}
+
+.itemBusy .busyStatus {
+  background-color: rgba(255, 234, 167, 0.6); /* 혼잡 - 연한 노랑 */
+}
+
+.itemDont .busyStatus {
+  background-color: rgba(250, 177, 160, 0.6); /* 이용불가 - 연한 핑크 */
 }
 
 .itemName {

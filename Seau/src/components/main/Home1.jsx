@@ -41,12 +41,12 @@ const Home1 = () => {
     setRightPanelOpen(true);
     // 마커 클릭인지 판단
     setIsMarkerClick(!!imageUrl)
-    
+
     setMapCenter(location);  // 클릭한 위치로 중심 이동
     setMapLevel(imageUrl ? 3 : 9)
     // console.log(mapLevel)
     console.log(placeInfo)
-  
+
     try {
       // 미디어 데이터 가져오기
       if (imageUrl) {
@@ -128,24 +128,29 @@ const Home1 = () => {
         </div>
         {selectedPlace && (
           <div className='panelContent'>
-          <div className={`${busyColor[selectedPlace.busy]}`}>
-            <div className="itemName">{selectedPlace.name}</div>
-            {selectedLocation && (
-              <div>
-                <div className='itemInfo2'>
+            <div className={ selectedPlace.busy ? `${busyColor[selectedPlace.busy]}` : 'item'}>
+              <div className="itemName">{selectedPlace.name}</div>
+              {selectedLocation && (
+                <div>
+                  <div className='itemInfo2'>
 
-                  <p>{selectedPlace.description}</p>
-                  <p>{selectedPlace.operatingTime}</p>
-                  <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : '' }</p>
-                  <p>{selectedPlace.busy ? `${selectedPlace.busy}` : '' }</p>
-                </div>
+                    <p>{selectedPlace.description}</p>
+                    <p>{selectedPlace.operatingTime}</p>
+                    <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : ''}</p>
+                    {selectedPlace.busy && (
+                      <div className="busyStatus">
+                        현재 상태: <strong>{selectedPlace.busy}</strong>
+                      </div>
+                    )}
+                    {/* <p>{selectedPlace.busy ? `${selectedPlace.busy}` : ''}</p> */}
+                  </div>
 
-                {/* <div className="itemInfo">
+                  {/* <div className="itemInfo">
                   거리: {getDistance(selectedLocation.lat, selectedLocation.lng, selectedPlace.lat, selectedPlace.lng).toFixed(2)} km
                 </div> */}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -158,15 +163,15 @@ const Home1 = () => {
               <h4>🏛️ 관광지</h4>
               {categori.attractions.length > 0 ? (
                 categori.attractions.filter((place) => place.name !== selectedPlace?.name)
-                .map((place, idx) => (
-                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
-                    <div className='itemName'>{place.name}</div>
-                    {/* 거리 계산 (km 단위로 소수점 2자리까지) */}
-                    <div className='itemInfo'>
-                      거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                  .map((place, idx) => (
+                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                      <div className='itemName'>{place.name}</div>
+                      {/* 거리 계산 (km 단위로 소수점 2자리까지) */}
+                      <div className='itemInfo'>
+                        거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <div>근처에 관광지가 없습니다.</div>
               )}
@@ -176,14 +181,14 @@ const Home1 = () => {
               <h4>🍽️ 맛집</h4>
               {categori.restaurants.length > 0 ? (
                 categori.restaurants.filter((place) => place.name !== selectedPlace?.name)
-                .map((place, idx) => (
-                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
-                    <div className='itemName'>{place.name}</div>
-                    <div className='itemInfo'>
-                      거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                  .map((place, idx) => (
+                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                      <div className='itemName'>{place.name}</div>
+                      <div className='itemInfo'>
+                        거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <div>근처에 맛집이 없습니다.</div>
               )}
@@ -193,14 +198,14 @@ const Home1 = () => {
               <h4>🎪 레저</h4>
               {categori.activities.length > 0 ? (
                 categori.activities.filter((place) => place.name !== selectedPlace?.name)
-                .map((place, idx) => (
-                  <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
-                    <div className='itemName'>{place.name}</div>
-                    <div className='itemInfo'>
-                      거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                  .map((place, idx) => (
+                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                      <div className='itemName'>{place.name}</div>
+                      <div className='itemInfo'>
+                        거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
+                      </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <div>근처에 레저 업체가 없습니다.</div>
               )}
