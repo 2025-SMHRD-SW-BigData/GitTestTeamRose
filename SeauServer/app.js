@@ -367,6 +367,7 @@ app.post('/createschedule', async (req, res) => {
         scheduled_date,
         max_participants,
         cost_per_person,
+        user_type,
     } = req.body;
 
     if (!userId || !title || !address || !scheduled_date || !max_participants || !cost_per_person) {
@@ -423,8 +424,8 @@ app.post('/createschedule', async (req, res) => {
         // 스케쥴 데이터 삽입 (콜백으로 변경)
         const insertScheduleQuery = `
             INSERT INTO schedules
-            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id, user_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         conn.query(insertScheduleQuery, [
             userId,
@@ -437,7 +438,8 @@ app.post('/createschedule', async (req, res) => {
             scheduled_date,
             max_participants,
             cost_per_person,
-            placeIdFromDB
+            placeIdFromDB,
+            user_type
         ], (insertErr, result) => {
             if (insertErr) {
                 console.error('스케쥴 데이터 삽입 중 오류 발생:', insertErr);

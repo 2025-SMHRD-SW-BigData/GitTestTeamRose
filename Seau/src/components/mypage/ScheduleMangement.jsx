@@ -181,10 +181,8 @@ const NoScheduleMessage = styled.p`
     border: 1px solid #e5e7eb;
 `;
 
-
 export default function ScheduleManagement() {
-    const { userId } = useContext(UserContext); // UserContext에서 userId 가져오기
-    const { userData} = useContext(UserContext);
+    const { userId, userData, placeData } = useContext(UserContext);
     console.log(userData?.user_type);
 
     const [scheduleData, setScheduleData] = useState({
@@ -247,6 +245,17 @@ export default function ScheduleManagement() {
         fetchMySchedules();
     }, [userId]);
 
+    // userData 또는 placeData가 변경될 때 scheduleData를 업데이트
+    useEffect(() => {
+        if (userData?.user_type === 1 && placeData) {
+            setScheduleData(prev => ({
+                ...prev,
+                location_name: placeData.place_name || '',
+                address: placeData.address || '',
+            }));
+        }
+    }, [userData, placeData]); // userData와 placeData가 변경될 때마다 실행
+
     // 입력 필드 값 변경 핸들러
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -272,6 +281,7 @@ export default function ScheduleManagement() {
                 scheduled_date: scheduleData.scheduleDate,
                 max_participants: parseInt(scheduleData.maxParticipants, 10),
                 cost_per_person: parseInt(scheduleData.costPerPerson, 10),
+                user_type : userData?.user_type,
             };
             console.log('스케쥴 생성 데이터:', dataToSend);
 
@@ -279,16 +289,17 @@ export default function ScheduleManagement() {
 
             if (response.data.success) {
                 showMessage('스케쥴이 성공적으로 생성되었습니다!', 'success');
-                // 폼 초기화
-                setScheduleData({
+                // 폼 초기화 (장소명, 주소는 사업자 회원일 경우 유지될 수 있으므로 분리)
+                setScheduleData(prev => ({
+                    ...prev,
                     title: '',
                     description: '',
-                    location_name: '',
-                    address: '',
                     scheduleDate: '',
                     maxParticipants: '',
                     costPerPerson: '',
-                });
+                    // user_type이 1이 아니면 location_name과 address도 초기화
+                    ...((userData?.user_type !== 1) && { location_name: '', address: '' })
+                }));
                 fetchMySchedules(); // 스케쥴 목록 새로고침
             } else {
                 showMessage(`스케쥴 생성 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
@@ -306,6 +317,7 @@ export default function ScheduleManagement() {
             [scheduleId]: !prevState[scheduleId] // 해당 ID의 상태를 토글
         }));
     };
+    console.log(placeData);
 
     return (
         <>
@@ -357,6 +369,9 @@ export default function ScheduleManagement() {
                                 value={scheduleData.location_name}
                                 onChange={handleInputChange}
                                 placeholder="예: 우리 동네 카페, 광주공원"
+                                // user_type이 1이면 readOnly 속성 추가하여 수정 불가능하게 함
+                                readOnly={userData?.user_type === 1}
+                                style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
                             />
                         </FormGroup>
 
@@ -373,7 +388,7 @@ export default function ScheduleManagement() {
                                 required
                             />
                         </FormGroup>
-                        
+
                         <FormGroup>
                             <Label htmlFor="costPerPerson">1인당 비용</Label>
                             <Input
@@ -387,7 +402,7 @@ export default function ScheduleManagement() {
                                 required
                             />
                         </FormGroup>
-                        
+
                         {/* 주소 (전체 너비) */}
                         <FormGroup className="full-width">
                             <Label htmlFor="address">주소</Label>
@@ -399,6 +414,9 @@ export default function ScheduleManagement() {
                                 onChange={handleInputChange}
                                 placeholder="일정 장소 주소를 입력하세요 (예: 서울특별시 강남구 테헤란로 123)"
                                 required
+                                // user_type이 1이면 readOnly 속성 추가하여 수정 불가능하게 함
+                                readOnly={userData?.user_type === 1}
+                                style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
                             />
                         </FormGroup>
 

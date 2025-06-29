@@ -232,6 +232,7 @@ export default function MyPage() {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
   const nav = useNavigate();
   const { userId, setUserId } = useContext(UserContext);
+  const {placeData, setPlaceData} = useContext(UserContext);
   const { isOauth } = useContext(UserContext);
   console.log(userId, isOauth)
   const {userData, setUserData} = useContext(UserContext);
@@ -253,6 +254,9 @@ export default function MyPage() {
         console.log(res.data.data);
         const result = res.data.data.user;
         setUserData(result);
+        const place_result = res.data.data.place[0];
+        setPlaceData(place_result);
+        console.log(placeData);
         console.log(userData);
       })
 
