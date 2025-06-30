@@ -55,7 +55,7 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 100%; /* 부모 요소에 맞게 조정 */
+    width: 94%; /* 부모 요소에 맞게 조정 */
     padding: 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;
@@ -71,7 +71,7 @@ const Input = styled.input`
 `;
 
 const TextArea = styled.textarea`
-    width: 100%; /* 부모 요소에 맞게 조정 */
+    width: 94%; /* 부모 요소에 맞게 조정 */
     padding: 12px;
     border: 1px solid #d1d5db;
     border-radius: 8px;

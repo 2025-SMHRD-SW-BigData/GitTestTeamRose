@@ -1,253 +1,201 @@
-// KakaoMap.js
-import React, { useEffect, useState, useRef } from 'react'
-import { Map, MapMarker } from 'react-kakao-maps-sdk'
-import useKakaoLoader from './useKaKaoLoader'
-import axios from 'axios'
-import getDistance from './getDistance'
+import React, { useEffect, useState, useRef } from 'react';
+import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import useKakaoLoader from './useKaKaoLoader';
+import axios from 'axios';
+import getDistance from './getDistance';
 
-const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, mapCenter, mapLevel, onScheduleChange, showSchedule, onMapLevelChange }) => {
-    // Kakao SDK 로드 완료 여부 받기
-    const isKakaoLoaded = useKakaoLoader()
-    const [placeMarkerList, setPlaceMarkerList] = useState([])
-    const [nearbyMarkers, setNearbyMarkers] = useState([])
-    const [markerList, setMarkerList] = useState([])
-    const [scheduleList, setScheduleList] = useState([])
-    const mapRef = useRef(null)
+const KakaoMap = ({
+    selectedLocation,
+    onLocationSelect,
+    onNearbyMarkersChange,
+    mapCenter,
+    mapLevel,
+    onMapLevelChange,
+    onScheduleChange,
+    showSchedule,
+    onNearestBeachChange
+}) => {
+    const isKakaoLoaded = useKakaoLoader();
+    const [placeMarkerList, setPlaceMarkerList] = useState([]);
+    const [nearbyMarkers, setNearbyMarkers] = useState([]);
+    const [markerList, setMarkerList] = useState([]);
+    const [scheduleList, setScheduleList] = useState([]);
+    const mapRef = useRef(null);
 
-    // 주소 → 위경도 변환 함수
+    useEffect(() => {
+        if (!isKakaoLoaded) return;
+
+        const fetchData = async () => {
+            try {
+                const [beachRes, tourRes, scheduleRes] = await Promise.all([
+                    axios.get('http://localhost:3001/place/beach'),
+                    axios.get('http://localhost:3001/place/tour'),
+                    axios.get('http://localhost:3001/schedules/get')
+                ]);
+
+                const beaches = await Promise.all(beachRes.data.beach.map(async (b) => {
+                    try {
+                        const coords = await geocodeAddress(b.address);
+                        return {
+                            ...coords,
+                            name: b.place_name,
+                            image: b.main_image_url,
+                            type: 'beach'
+                        };
+                    } catch {
+                        return null;
+                    }
+                }));
+
+                const tours = tourRes.data.tour
+                    .filter(t => t.latitude && t.longitude)
+                    .map(t => ({
+                        lat: parseFloat(t.latitude),
+                        lng: parseFloat(t.longitude),
+                        name: t.place_name,
+                        image: t.main_image_url,
+                        description: t.description,
+                        operatingTime: t.operating_time,
+                        phone: t.phone_number,
+                        type: t.place_type,
+                        busy: t.busy
+                    }));
+
+                const schedules = scheduleRes.data.schedules
+                    .filter(s => s.latitude && s.longitude)
+                    .map(s => ({
+                        lat: parseFloat(s.latitude),
+                        lng: parseFloat(s.longitude),
+                        title: s.title,
+                        description: s.description,
+                        Date: s.scheduled_date,
+                        location: s.location_name,
+                        maxPeople: s.max_participants,
+                        perCost: s.cost_per_person,
+                        status: s.status,
+                        address: s.address,
+                        userId: s.user_id
+                    }));
+
+                setMarkerList(beaches.filter(Boolean));
+                setPlaceMarkerList(tours);
+                setScheduleList(schedules);
+            } catch (err) {
+                console.error(err);
+            }
+        };
+
+        fetchData();
+    }, [isKakaoLoaded]);
+
+    useEffect(() => {
+        if (!selectedLocation || placeMarkerList.length === 0 || markerList.length === 0) return;
+
+        const nearbyTour = placeMarkerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
+        const nearbyBeach = markerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
+        const nearby = [...nearbyTour, ...nearbyBeach];
+
+        setNearbyMarkers(nearby);
+        onNearbyMarkersChange?.(nearby);
+        onScheduleChange?.(scheduleList);
+
+        // 가장 가까운 해변
+        let minDist = Infinity;
+        let closest = null;
+        for (const beach of markerList) {
+            const dist = getDistance(selectedLocation.lat, selectedLocation.lng, beach.lat, beach.lng);
+            if (dist < minDist) {
+                minDist = dist;
+                closest = beach;
+            }
+        }
+        onNearestBeachChange?.(minDist <= 10 ? closest : null);
+    }, [selectedLocation, placeMarkerList, markerList]);
+
     const geocodeAddress = (address) => {
         return new Promise((resolve, reject) => {
-            // kakao SDK가 로드되지 않았을 때
-            if (!window.kakao || !window.kakao.maps) {
-                return reject(new Error('Kakao 지도 API가 아직 로드되지 않았습니다.'))
-            }
-
-            const geocoder = new window.kakao.maps.services.Geocoder()
+            const geocoder = new window.kakao.maps.services.Geocoder();
             geocoder.addressSearch(address, (result, status) => {
                 if (status === window.kakao.maps.services.Status.OK) {
-                    const lat = parseFloat(result[0].y)
-                    const lng = parseFloat(result[0].x)
-                    resolve({ lat, lng })
+                    const lat = parseFloat(result[0].y);
+                    const lng = parseFloat(result[0].x);
+                    resolve({ lat, lng });
                 } else {
-                    reject(new Error('주소 검색 실패: ' + address))
+                    reject(new Error('지오코딩 실패'));
                 }
-            })
-        })
-    }
-    console.log(scheduleList)
+            });
+        });
+    };
 
-    // 서버에서 주소 목록 가져오고 마커 리스트 생성
     useEffect(() => {
-        if (!isKakaoLoaded) return
-
-        const fetchAndGeocode = async () => {
-            // beach 데이터 가져오기
-            try {
-                const res = await axios.get('http://localhost:3001/place/beach') // 서버 주소에 맞게 수정
-                // console.log(res.data)
-                const beachList = res.data.beach // [{ name: '곽지해수욕장', address: '제주 제주시 곽지리...' }]
-
-                const geocoded = await Promise.all(
-                    beachList.map(async (beach) => {
-                        try {
-                            const coords = await geocodeAddress(beach.address)
-                            return {
-                                ...coords,
-                                name: beach.place_name,
-                                image: beach.main_image_url,
-                                type: 'beach'
-                            }
-                        } catch (e) {
-                            console.error('지오코딩 실패:', e.message)
-                            return null
-                        }
-                    })
-                )
-
-                setMarkerList(geocoded.filter(Boolean)) // 실패한 건 제거
-            } catch (err) {
-                console.error('해변 데이터 불러오기 실패:', err)
-            }
-
-            // 주변 관광 데이터 가져오기
-            try {
-                const tourRes = await axios.get('http://localhost:3001/place/tour')
-                const tourList = tourRes.data.tour;
-
-                const provideTours = tourList.map((tour) => {
-                    if (tour.latitude == null || tour.longitude == null) {
-                        console.warn(`위치 정보 누락된 장소 : ${tour.place_name}`)
-                        return null;
-                    }
-
-                    return {
-                        lat: parseFloat(tour.latitude),
-                        lng: parseFloat(tour.longitude),
-                        name: tour.place_name,
-                        image: tour.main_image_url,
-                        description: tour.description,
-                        operatingTime: tour.operating_time,
-                        phone: tour.phone_number,
-                        type: tour.place_type,
-                        busy: tour.busy
-                    }
-                })
-                setPlaceMarkerList(provideTours.filter(Boolean))
-                // console.log(placeMarkerList)
-            } catch (err) {
-                console.error('주변 관광 정보 데이터 불러오기 실패:', err)
-            }
-
-            // 스케줄 데이터 가져오기
-            try {
-                const scheduleRes = await axios.get('http://localhost:3001/schedules/get')
-                // console.log(scheduleRes.data.schedules)
-                const schedulesList = scheduleRes.data.schedules
-
-                const provideSchedules = schedulesList.map((schedule) => {
-                    if (schedule.latitude == null || schedule.longitude == null) {
-                        console.warn(`위치 정보 누락된 장소 : ${schedule.title}`)
-                        return null;
-                    }
-                    return {
-                        lat: parseFloat(schedule.latitude),
-                        lng: parseFloat(schedule.longitude),
-                        title: schedule.title,
-                        description: schedule.description,
-                        Date: schedule.scheduled_date,
-                        location: schedule.location_name,
-                        maxPeople: schedule.max_participants,
-                        perCost: schedule.cost_per_person,
-                        status: schedule.status,
-                        address: schedule.address,
-                        userId: schedule.user_id
-                    }
-                })
-                setScheduleList(provideSchedules.filter(Boolean))
-                // console.log(scheduleList)
-            } catch (err) {
-                console.error('스케줄 데이터 불러오기 실패:', err)
-            }
-        }
-
-
-        fetchAndGeocode()
-    }, [isKakaoLoaded])
-
-    // 선택한 위치에따라 5km이내의 주변 관광지 마커를 띄우기
-    useEffect(() => {
-        if (!selectedLocation || placeMarkerList.length === 0 || markerList.length === 0) return
-
-        const nearbyTour = placeMarkerList.filter((place) => {
-            const dist = getDistance(
-                selectedLocation.lat,
-                selectedLocation.lng,
-                place.lat,
-                place.lng
-            )
-            return dist < 5 // 5km 이내만 표시
-        })
-
-        const nearbyBeaches = markerList.filter((place) => {
-            const dist = getDistance(
-                selectedLocation.lat,
-                selectedLocation.lng,
-                place.lat,
-                place.lng
-            )
-            return dist < 5 // 5km 이내만 표시
-        })
-        // console.log('선택된 위치:', selectedLocation)
-        // console.log('필터된 nearbyMarkers:', nearby)
-
-        const nearby = [...nearbyTour, ...nearbyBeaches]
-
-        setNearbyMarkers(nearby)
-        if (onNearbyMarkersChange) {
-            onNearbyMarkersChange(nearby)
-        }
-        if (onScheduleChange) {
-            onScheduleChange(scheduleList)
-        }
-    }, [selectedLocation, placeMarkerList, markerList, scheduleList])
-
-    const handleMapClick = (_map, mouseEvent) => {
-        const lat = mouseEvent.latLng.getLat()
-        const lng = mouseEvent.latLng.getLng()
-        onLocationSelect({ lat, lng })
-    }
-    console.log(mapLevel)
-
-    const handleZoomChanged = () => {
         if (!mapRef.current) return;
-        const currentLevel = mapRef.current.getLevel()
-        if (onMapLevelChange) {
-            onMapLevelChange(currentLevel)
-        }
-    }
+
+        const timer = setTimeout(() => {
+            const currentCenter = mapRef.current.getCenter();
+            if (
+                currentCenter.getLat() !== mapCenter.lat ||
+                currentCenter.getLng() !== mapCenter.lng
+            ) {
+                mapRef.current.setCenter(new window.kakao.maps.LatLng(mapCenter.lat, mapCenter.lng));
+            }
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [mapCenter]);
 
     useEffect(() => {
-        if (mapRef.current && mapCenter) {
-            const center = new window.kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
-            mapRef.current.setCenter(center);
-        }
+        if (!mapRef.current) return;
 
-        if (mapRef.current && mapLevel !== undefined) {
+        const currentLevel = mapRef.current.getLevel();
+        if (currentLevel !== mapLevel) {
             mapRef.current.setLevel(mapLevel);
         }
-    }, [mapCenter, mapLevel]);
+    }, [mapLevel]);
+
+    const handleMapClick = (_map, mouseEvent) => {
+        const lat = mouseEvent.latLng.getLat();
+        const lng = mouseEvent.latLng.getLng();
+        onLocationSelect({ lat, lng });
+    };
+
+    const handleZoomChanged = () => {
+        if (mapRef.current) {
+            const currentLevel = mapRef.current.getLevel();
+            onMapLevelChange?.(currentLevel);
+        }
+    };
 
     return (
         <Map
-            key={`${mapCenter.lat}-${mapCenter.lng}-${mapLevel}`} // 위치 바뀔 때 명확히 리턴
+            // key={`${mapCenter.lat}-${mapCenter.lng}-${mapLevel}`} // 위치 바뀔 때 명확히 리턴
             center={mapCenter}
             className='map'
             level={mapLevel}
             onClick={handleMapClick}
-            onCreate={(map) => {
-                mapRef.current = map;
-            }}
+            onCreate={(map) => (mapRef.current = map)}
             onZoomChanged={handleZoomChanged}
         >
-            {/* beach 마커 */}
-            {markerList.map((marker, idx) => (
-                <MapMarker
-                    key={idx}
-                    position={{ lat: marker.lat, lng: marker.lng }}
-                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image)}>
-                    {/* {console.log(marker.image)} */}
-                    <div>{marker.name}</div>
+            {markerList.map((m, i) => (
+                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image)}>
+                    <div>{m.name}</div>
                 </MapMarker>
             ))}
 
-            {/* 주변 관광장소 마커 */}
-            {nearbyMarkers.map((marker, idx) => (
-                <MapMarker
-                    key={idx}
-                    position={{ lat: marker.lat, lng: marker.lng }}
-                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image, marker)}
-                >
-                    <div style={{ color: marker.type === 'beach' ? 'black' : 'orange' }}>{marker.name}</div>
+            {nearbyMarkers.map((m, i) => (
+                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image, m)}>
+                    <div style={{ color: m.type === 'beach' ? 'black' : 'orange' }}>{m.name}</div>
                 </MapMarker>
             ))}
 
-            {/* 스케줄 마커 */}
-            {showSchedule && scheduleList.map((marker, idx) => (
-                <MapMarker
-                    key={idx}
-                    position={{ lat: marker.lat, lng: marker.lng }}
-                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, null, marker)}
-                >
-                    {/* {console.log(marker.lat, marker.lng)} */}
-                    <div style={{ color: 'red' }}>{marker.title}</div>
+            {showSchedule && scheduleList.map((s, i) => (
+                <MapMarker key={i} position={{ lat: s.lat, lng: s.lng }} onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}>
+                    <div style={{ color: 'red' }}>{s.title}</div>
                 </MapMarker>
             ))}
 
-            {selectedLocation && (
-                <MapMarker position={selectedLocation} />
-            )}
+            {selectedLocation && <MapMarker position={selectedLocation} />}
         </Map>
-    )
-}
+    );
+};
 
-export default KakaoMap
+export default KakaoMap;
