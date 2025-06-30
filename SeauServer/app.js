@@ -83,7 +83,7 @@ app.post('/mypage', (req, res) => {
     const { userId } = req.body;
 
     // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
-    let userSql = `SELECT user_id, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score, user_type FROM users WHERE user_id = ?;`;
+    let userSql = `SELECT user_id, user_pw, user_name, phone_number, nickname, DATE_FORMAT(birth_date, '%Y-%m-%d') AS birth_date, gender, profile_image_url, introduce, mbti, manner_score, user_type FROM users WHERE user_id = ?;`;
 
     console.log('마이페이지 정보 요청:', userId);
 
@@ -367,6 +367,7 @@ app.post('/createschedule', async (req, res) => {
         scheduled_date,
         max_participants,
         cost_per_person,
+        schedule_image_url,
         user_type,
     } = req.body;
 
@@ -424,8 +425,8 @@ app.post('/createschedule', async (req, res) => {
         // 스케쥴 데이터 삽입 (콜백으로 변경)
         const insertScheduleQuery = `
             INSERT INTO schedules
-            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id, user_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id, schedule_image_url, user_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         conn.query(insertScheduleQuery, [
             userId,
@@ -439,6 +440,7 @@ app.post('/createschedule', async (req, res) => {
             max_participants,
             cost_per_person,
             placeIdFromDB,
+            schedule_image_url,
             user_type
         ], (insertErr, result) => {
             if (insertErr) {
@@ -451,7 +453,6 @@ app.post('/createschedule', async (req, res) => {
     });
 });
 
-// 사용자 스케쥴 조회
 app.post('/schedules', (req, res) => {
     const { userId } = req.body;
 
@@ -459,15 +460,264 @@ app.post('/schedules', (req, res) => {
         return res.status(400).json({ success: false, message: 'userId가 필요합니다.' });
     }
 
-    let sql = 'SELECT * FROM schedules WHERE user_id = ? ORDER BY scheduled_date DESC';
+    // 각 스케줄의 'checked_people' (req_status가 1인 멤버 수)을 포함하여 조회하는 SQL
+    let sql = `
+        SELECT
+            s.*,
+            COUNT(CASE WHEN sm.req_status = 1 THEN sm.req_user_id END) AS checked_people,
+            COUNT(CASE WHEN sm.req_status = 0 THEN sm.req_user_id END) AS pending_people,
+            COUNT(CASE WHEN sm.req_status = 2 THEN sm.req_user_id END) AS rejected_people
+        FROM
+            schedules s
+        LEFT JOIN
+            schedule_member sm ON s.schedule_id = sm.schedule_id
+        WHERE
+            s.user_id = ?
+        GROUP BY
+            s.schedule_id
+        ORDER BY
+            s.scheduled_date DESC;
+    `;
+
     conn.connect(); // db 연결통로 열기
     conn.query(sql, [userId], (err, rows) => {
         if (err) {
             console.error('스케쥴 조회 중 오류 발생:', err);
+            // 에러 발생 시 연결 종료 (필요하다면)
+            // conn.end(); // conn.connect()를 매번 하는 방식이라면, 에러 발생 시 명시적으로 닫는 것이 좋습니다.
             return res.status(500).json({ success: false, message: '서버 오류: 스케쥴 조회에 실패했습니다.' });
         }
         res.json({ success: true, data: rows });
+        // 성공 시에도 연결 종료 (필요하다면)
+        // conn.end(); // conn.connect()를 매번 하는 방식이라면, 요청 처리 후 명시적으로 닫는 것이 좋습니다.
     });
+});
+
+
+app.get('/schedule_members/:scheduleId', (req, res) => { // 경로명을 '/schedule_members/:scheduleId'로 변경
+   const { scheduleId } = req.params;
+
+  console.log(`스케줄 ${scheduleId}의 멤버 조회 요청 (GET)`); // 로그 메시지 변경
+ 
+   // schedule_member와 users 테이블을 조인하여 req_user_id의 프로필 정보까지 가져옵니다.
+   const sql = `
+     SELECT
+       sm.req_user_id,
+       sm.req_status,
+       u.nickname,
+       u.profile_image_url,
+       u.gender,
+       u.mbti,
+       u.introduce,
+       u.manner_score
+     FROM
+       schedule_member sm
+     JOIN
+       users u ON sm.req_user_id = u.user_id
+     WHERE
+      sm.schedule_id = ?; 
+   `;
+ 
+   conn.connect(); // db 연결통로 열기
+   conn.query(sql, [scheduleId], (err, rows) => {
+     if (err) {
+       console.error('스케줄 멤버 조회 중 오류 발생:', err);
+       return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 조회 실패' });
+     }
+     res.json({ success: true, data: rows });
+     console.log(rows) // 조회된 데이터 로깅
+   });
+ });
+//스케쥴 멤버 수락
+app.post('/schedule/accept', (req, res) => {
+    console.log('수락요청');
+    const { scheduleId, reqUserId } = req.body;
+    console.log(scheduleId,reqUserId);
+
+    if (!scheduleId || !reqUserId) {
+        return res.status(400).json({ success: false, message: 'scheduleId와 reqUserId가 필요합니다.' });
+    }
+
+    const sql = `UPDATE schedule_member SET req_status = 1 WHERE schedule_id = ? AND req_user_id = ?`;
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [scheduleId, reqUserId], (err, result) => {
+        if (err) {
+            console.error('스케줄 멤버 수락 처리 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 수락 실패' });
+        }
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '스케줄 참여 신청이 수락되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당하는 스케줄 멤버 신청을 찾을 수 없습니다.' });
+        }
+    });
+});
+
+//스케쥴 멤버 거절
+app.post('/schedule/reject', (req, res) => {
+    const { scheduleId, reqUserId } = req.body;
+
+    if (!scheduleId || !reqUserId) {
+        return res.status(400).json({ success: false, message: 'scheduleId와 reqUserId가 필요합니다.' });
+    }
+
+    const sql = `UPDATE schedule_member SET req_status = 2 WHERE schedule_id = ? AND req_user_id = ?`;
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [scheduleId, reqUserId], (err, result) => {
+        if (err) {
+            console.error('스케줄 멤버 거절 처리 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 거절 실패' });
+        }
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '스케줄 참여 신청이 거절되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당하는 스케줄 멤버 신청을 찾을 수 없습니다.' });
+        }
+    });
+});
+
+// 특정 사용자 프로필 조회 (GET 요청)
+app.get('/users/:userId', (req, res) => { // <-- 이 라우트가 있는지 확인
+    const userId = req.params.userId; // URL 파라미터에서 userId를 가져옵니다.
+    console.log(`사용자 프로필 조회 요청: userId = ${userId}`); // 디버깅을 위한 로그
+
+    // users 테이블에서 user_id 컬럼을 기준으로 조회합니다.
+    // user_id는 users 테이블의 기본 키(PK)이며, 백엔드에서 사용자 구분을 위한 고유한 값입니다.
+    const sql = `
+        SELECT
+            user_id,    
+            nickname,       
+            gender,
+            birth_date,
+            phone_number,
+            introduce,
+            profile_image_url,
+            manner_score,
+            mbti,
+            user_type   
+        FROM
+            users
+        WHERE
+            user_id = ?;  
+    `;
+
+    conn.query(sql, [userId], (err, rows) => {
+        if (err) {
+            console.error('사용자 프로필 조회 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 프로필 조회 실패' });
+        }
+        if (rows.length > 0) {
+            // 조회된 첫 번째 행의 데이터를 반환합니다.
+            res.json({ success: true, data: rows[0] });
+        } else {
+            // 해당 userId를 가진 사용자가 없는 경우
+            res.status(404).json({ success: false, message: '사용자를 찾을 수 없습니다.' });
+        }
+    });
+});
+
+
+// ... (기존 require 및 conn 설정 코드) ...
+
+// 스케줄 업데이트
+app.post('/updateSchedule', async (req, res) => { // <-- async 키워드 추가
+    const { userId, scheduleId, title, description, location_name, address, scheduled_date, max_participants, cost_per_person, schedule_image_url } = req.body;
+
+    let longitude = null;
+    let latitude = null;
+
+    // 카카오맵 API 호출
+    try {
+        const kakaoApiUrl = `https://dapi.kakao.com/v2/local/search/address.json?query=${encodeURIComponent(address)}`;
+        const kakaoResponse = await fetch(kakaoApiUrl, {
+            headers: {
+                'Authorization': `KakaoAK ${KAKAO_REST_API_KEY}`
+            }
+        });
+        const kakaoData = await kakaoResponse.json();
+
+        if (kakaoData.documents && kakaoData.documents.length > 0) {
+            const firstResult = kakaoData.documents[0];
+            longitude = parseFloat(firstResult.x);
+            latitude = parseFloat(firstResult.y);
+            console.log(`주소 "${address}" -> 위도: ${latitude}, 경도: ${longitude}`);
+        } else {
+            console.warn(`카카오맵에서 주소 "${address}"에 대한 좌표를 찾을 수 없습니다.`);
+        }
+    } catch (error) {
+        console.error('카카오맵 API 호출 중 오류 발생:', error);
+        // 카카오맵 API 호출 실패 시에도 스케줄 업데이트는 진행되도록 (혹은 에러로 처리)
+        // 여기서는 에러 메시지를 클라이언트에 보내고 함수 종료
+        if (error.response && error.response.status === 401) {
+            return res.status(401).json({ success: false, message: '카카오맵 API 인증 오류입니다. API 키를 확인해주세요.' });
+        }
+        return res.status(500).json({ success: false, message: '서버 오류: 카카오맵 API 호출 실패' });
+    }
+
+    // 권한 검사: 현재 로그인한 사용자가 스케줄의 생성자인지 확인 (보안상 매우 중요!)
+    
+
+    try {
+        // 권한 확인 후 업데이트 진행
+        const updateSql = `
+            UPDATE schedules
+            SET
+                title = ?,
+                description = ?,
+                location_name = ?,
+                address = ?,
+                scheduled_date = ?,
+                max_participants = ?,
+                cost_per_person = ?,
+                latitude = ?,   
+                longitude = ?,
+                schedule_image_url=?
+            WHERE
+                schedule_id = ?;
+        `;
+
+        const updateResult = await new Promise((resolve, reject) => {
+            conn.query(updateSql, [title, description, location_name, address, scheduled_date, max_participants, cost_per_person, latitude, longitude, schedule_image_url, scheduleId], (err, result) => {
+                if (err) return reject(err);
+                resolve(result);
+            });
+        });
+
+        if (updateResult.affectedRows > 0) {
+            res.json({ success: true, message: '스케줄이 성공적으로 업데이트되었습니다!' });
+        } else {
+            res.status(400).json({ success: false, message: '스케줄 업데이트에 실패했습니다. 변경사항이 없거나 스케줄 ID가 유효하지 않습니다.' });
+        }
+    } catch (error) {
+        console.error('스케줄 업데이트 중 오류 발생:', error);
+        res.status(500).json({ success: false, message: '서버 오류: 스케줄 업데이트 실패' });
+    }
+});
+
+app.post('/deleteSchedule', (req, res) => {
+    // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
+    const { userId, scheduleId } = req.body;
+
+    let sql = 'delete from schedules where schedule_id = ?'
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, scheduleId, (err, result) => {
+        if (err) {
+            console.error('스케줄 삭제 처리 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 삭제 실패' });
+        }
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '스케줄 삭제가 완료되었습니다' });
+        } else {
+            res.status(404).json({ success: false, message: '해당하는 스케줄을 찾을 수 없습니다.' });
+        }
+    });
+
 });
 
 app.get('/schedules/get', (req, res)=>{
@@ -484,7 +734,6 @@ app.get('/schedules/get', (req, res)=>{
         }
     })
 })
-
 
 // 서버 시작
 app.listen(3001, () => {

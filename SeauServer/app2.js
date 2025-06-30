@@ -367,6 +367,7 @@ app.post('/createschedule', async (req, res) => {
         scheduled_date,
         max_participants,
         cost_per_person,
+        schedule_image_url,
         user_type,
     } = req.body;
 
@@ -424,8 +425,8 @@ app.post('/createschedule', async (req, res) => {
         // 스케쥴 데이터 삽입 (콜백으로 변경)
         const insertScheduleQuery = `
             INSERT INTO schedules
-            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id, user_type)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (user_id, title, description, location_name, latitude, longitude, address, scheduled_date, max_participants, cost_per_person, place_id, schedule_image_url, user_type)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         conn.query(insertScheduleQuery, [
             userId,
@@ -439,6 +440,7 @@ app.post('/createschedule', async (req, res) => {
             max_participants,
             cost_per_person,
             placeIdFromDB,
+            schedule_image_url,
             user_type
         ], (insertErr, result) => {
             if (insertErr) {
@@ -623,7 +625,7 @@ app.get('/users/:userId', (req, res) => { // <-- 이 라우트가 있는지 확�
 
 // 스케줄 업데이트
 app.post('/updateSchedule', async (req, res) => { // <-- async 키워드 추가
-    const { userId, scheduleId, title, description, location_name, address, scheduled_date, max_participants, cost_per_person, user_type } = req.body;
+    const { userId, scheduleId, title, description, location_name, address, scheduled_date, max_participants, cost_per_person, schedule_image_url } = req.body;
 
     let longitude = null;
     let latitude = null;
@@ -672,13 +674,14 @@ app.post('/updateSchedule', async (req, res) => { // <-- async 키워드 추가
                 max_participants = ?,
                 cost_per_person = ?,
                 latitude = ?,   
-                longitude = ?
+                longitude = ?,
+                schedule_image_url=?
             WHERE
                 schedule_id = ?;
         `;
 
         const updateResult = await new Promise((resolve, reject) => {
-            conn.query(updateSql, [title, description, location_name, address, scheduled_date, max_participants, cost_per_person, latitude, longitude, scheduleId], (err, result) => {
+            conn.query(updateSql, [title, description, location_name, address, scheduled_date, max_participants, cost_per_person, latitude, longitude, schedule_image_url, scheduleId], (err, result) => {
                 if (err) return reject(err);
                 resolve(result);
             });
@@ -716,6 +719,21 @@ app.post('/deleteSchedule', (req, res) => {
     });
 
 });
+
+app.get('/schedules/get', (req, res)=>{
+    let sql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id from schedules`
+    conn.connect();
+    conn.query(sql, (err, rows)=>{
+        if (!err) {
+            res.status(200).json({
+                schedules: rows
+            });
+        } else {
+            console.error(err);
+            res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
+        }
+    })
+})
 
 // 서버 시작
 app.listen(3001, () => {

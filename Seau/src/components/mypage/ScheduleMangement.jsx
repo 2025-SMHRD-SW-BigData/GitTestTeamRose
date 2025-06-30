@@ -1,70 +1,293 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useRef, useContext, useCallback } from 'react';
 import styled from '@emotion/styled';
 import axios from 'axios';
-import { UserContext } from '../../context/UserContext'; // UserContext 경로 확인
+import { useNavigate } from 'react-router-dom';
+import { Plus, Edit, Save, X, Trash2, Camera } from 'lucide-react';
+import { UserContext } from '../../context/UserContext';
+import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
-// ... (이전과 동일한 스타일 컴포넌트들) ...
-const Card = styled.div`
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-    margin-bottom: 24px; /* 리스트와 폼 사이에 간격 추가 */
+// --- AWS S3 설정 (!!!여기를 본인의 AWS S3 설정으로 채워주세요!!!) ---
+// 경고: 클라이언트 측 코드에 AWS 접근 키를 직접 포함하는 것은 보안상 매우 위험합니다.
+// 실제 서비스에서는 반드시 백엔드 서버를 통해 임시 자격 증명을 발급받거나,
+// Presigned URL을 생성하여 사용하는 방식을 강력히 권장합니다.
+const awsConfig = {
+    region: "ap-southeast-2", // 예: 서울 리전 (본인의 S3 버킷 리전으로 변경)
+    bucketName: "seaucloud", // 실제 S3 버킷 이름으로 변경
+    accessKeyId: "AKIASKD5PB3ZPAOAVFRY", // 본인의 AWS Access Key ID
+    secretAccessKey: "lopehabaEv0sFTCPDcGyiI/s9fazZWRhN0euyl9x", // 본인의 AWS Secret Access Key
+};
+
+// AWS S3 클라이언트 초기화
+const s3Client = new S3Client({
+    region: awsConfig.region,
+    credentials: {
+        accessKeyId: awsConfig.accessKeyId,
+        secretAccessKey: awsConfig.secretAccessKey,
+    },
+});
+// --- AWS S3 설정 끝 ---
+
+// --- 스타일 컴포넌트 ---
+const PageContainer = styled.div`
+    padding: 2rem;
+    background-color: #f9fafb;
+    min-height: 100vh;
 `;
 
-const CardHeader = styled.div`
-    padding: 24px 24px 0 24px;
+const Header = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1rem;
 `;
 
-const CardTitle = styled.h2`
-    font-size: 24px;
-    font-weight: bold;
+const Title = styled.h1`
+    font-size: 2.25rem;
+    font-weight: 700;
     color: #111827;
 `;
 
-const CardContent = styled.div`
-    padding: 24px;
+const Button = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+
+    ${props => props.variant === 'primary' && `
+        background-color: #7c3aed;
+        color: white;
+        &:hover {
+            background-color: #6d28d9;
+        }
+    `}
+
+    ${props => props.variant === 'outline' && `
+        background-color: transparent;
+        color: #374151;
+        border: 1px solid #d1d5db;
+        &:hover {
+            background-color: #f9fafb;
+        }
+    `}
+    
+    ${props => props.variant === 'danger' && `
+        background-color: #dc2626;
+        color: white;
+        &:hover {
+            background-color: #b91c1c;
+        }
+    `}
 `;
 
-const FormGrid = styled.form`
+const ScheduleGrid = styled.div`
     display: grid;
-    grid-template-columns: 1fr 1fr; /* 두 개의 열을 동일한 너비로 설정 */
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+`;
 
-    @media (max-width: 768px) { /* 태블릿 및 모바일에서는 한 줄로 */
-        grid-template-columns: 1fr;
+const ScheduleCard = styled.div`
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+    &:hover {
+        transform: translateY(-5px);
+    }
+`;
+
+const CardImage = styled.img`
+    width: 100%;
+    height: 180px; /* 고정 높이 */
+    object-fit: cover;
+    background-color: #f3f4f6; /* 이미지 로딩 전/없을 때 배경 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 1rem;
+`;
+
+const CardContent = styled.div`
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+`;
+
+const CardTitle = styled.h3`
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+`;
+
+const CardDescription = styled.p`
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-grow: 1;
+`;
+
+const CardDetail = styled.p`
+    font-size: 0.875rem;
+    color: #4b5563;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+`;
+
+const CardActions = styled.div`
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 1rem;
+`;
+
+const ActionButton = styled.button`
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+
+    ${props => props.type === 'edit' && `
+        background-color: #60a5fa;
+        color: white;
+        &:hover { background-color: #3b82f6; }
+    `}
+    ${props => props.type === 'delete' && `
+        background-color: #ef4444;
+        color: white;
+        &:hover { background-color: #dc2626; }
+    `}
+    ${props => props.type === 'members' && `
+        background-color: #a78bfa;
+        color: white;
+        &:hover { background-color: #8b5cf6; }
+    `}
+    ${props => props.type === 'accept' && `
+        background-color: #10b981;
+        color: white;
+        &:hover { background-color: #059669; }
+    `}
+    ${props => props.type === 'reject' && `
+        background-color: #f59e0b;
+        color: white;
+        &:hover { background-color: #d97706; }
+    `}
+    ${props => props.type === 'close' && `
+        background-color: #6b7280;
+        color: white;
+        &:hover { background-color: #4b5563; }
+    `}
+`;
+
+const EmptyState = styled.div`
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-size: 1.125rem;
+`;
+
+// --- 모달 관련 스타일 ---
+const ModalOverlay = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+`;
+
+const ModalOverlayProfile = styled(ModalOverlay)`
+    z-index: 1001; /* 프로필 모달은 멤버 모달 위에 오도록 */
+`;
+
+const ModalContent = styled.div`
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+`;
+
+const ModalHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+`;
+
+const ModalTitle = styled.h2`
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+`;
+
+const CloseButton = styled.button`
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+    &:hover {
+        color: #111827;
     }
 `;
 
 const FormGroup = styled.div`
-    display: flex;
-    flex-direction: column;
-    &.full-width {
-        grid-column: 1 / -1; /* 그리드 전체 너비 차지 */
-    }
+    margin-bottom: 1rem;
 `;
 
 const Label = styled.label`
-    font-size: 14px;
+    display: block;
+    font-size: 0.875rem;
     font-weight: 500;
     color: #374151;
-    margin-bottom: 8px;
+    margin-bottom: 0.5rem;
 `;
 
 const Input = styled.input`
     width: 94%; /* 부모 요소에 맞게 조정 */
     padding: 12px;
     border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 16px;
-    outline: none;
-    transition: all 0.2s;
-    background-color: #f9fafb;
-
+    border-radius: 0.5rem;
+    font-size: 1rem;
     &:focus {
+        outline: none;
         border-color: #7c3aed;
         box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
     }
@@ -74,38 +297,39 @@ const TextArea = styled.textarea`
     width: 94%; /* 부모 요소에 맞게 조정 */
     padding: 12px;
     border: 1px solid #d1d5db;
-    border-radius: 8px;
-    font-size: 16px;
-    outline: none;
-    resize: vertical; /* 세로 크기 조절 가능 */
-    font-family: inherit;
-    transition: all 0.2s;
-    background-color: #f9fafb;
-
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    min-height: 80px;
+    resize: vertical;
     &:focus {
+        outline: none;
         border-color: #7c3aed;
         box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
     }
 `;
 
-const SubmitButton = styled.button`
-    padding: 12px 20px;
-    background-color: #7c3aed;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 16px;
-    font-weight: 600;
+const Select = styled.select`
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: white;
     cursor: pointer;
-    transition: background-color 0.2s;
-    grid-column: 1 / -1; /* 버튼이 항상 전체 너비를 차지하도록 */
-
-    &:hover {
-        background-color: #6d28d9;
+    &:focus {
+        outline: none;
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
     }
 `;
 
-// 메시지 표시를 위한 스타일 컴포넌트
+const FormActions = styled.div`
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+`;
+
 const MessageBar = styled.div`
     padding: 12px 24px;
     border-radius: 8px;
@@ -122,73 +346,17 @@ const MessageBar = styled.div`
     `}
 `;
 
-// 스케쥴 리스트 스타일
-const ScheduleListContainer = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-`;
-
-const ScheduleItem = styled(Card)`
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    transition: background-color 0.2s;
-
-    &:hover {
-        background-color: #f9fafb;
-    }
-`;
-
-const ScheduleItemHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-`;
-
-const ScheduleItemTitle = styled.h3`
-    font-size: 20px;
-    font-weight: bold;
-    color: #111827;
-    flex-grow: 1; /* 제목이 공간을 최대한 차지하도록 */
-`;
-
-const ScheduleItemParticipants = styled.span`
-    font-size: 16px;
-    font-weight: 500;
-    color: #4b5563;
-    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
-`;
-
-const ScheduleItemDetail = styled.p`
-    font-size: 14px;
-    color: #4b5563;
-    margin-bottom: 4px; /* 상세 항목 간 간격 */
-`;
-
-const NoScheduleMessage = styled.p`
-    text-align: center;
-    color: #6b7280;
-    padding: 40px;
-    background-color: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
-`;
-
-// 스케줄 멤버 관련
 const ScheduleMembersSection = styled.div`
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #eee;
+    margin-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.5rem;
 `;
 
-const SectionTitle = styled.h4`
-    font-size: 18px;
+const SectionTitle = styled.h3`
+    font-size: 1.25rem;
+    font-weight: 600;
     color: #111827;
-    margin-bottom: 10px;
+    margin-bottom: 1rem;
 `;
 
 const MemberList = styled.ul`
@@ -201,908 +369,904 @@ const MemberItem = styled.li`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid #f3f4f6;
-    &:last-child {
-        border-bottom: none;
-    }
-    cursor: pointer; // 클릭 가능하게
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
     &:hover {
-        background-color: #f0f4f8;
+        background-color: #f3f4f6;
     }
 `;
 
 const MemberInfo = styled.div`
     display: flex;
-    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
 `;
 
 const MemberName = styled.span`
-    font-weight: 600;
+    font-weight: 500;
     color: #374151;
 `;
 
 const MemberStatus = styled.span`
-    font-size: 13px;
-    color: ${props => {
-    if (props.status === 0) return '#f59e0b'; // 대기중 (pending)
-    if (props.status === 1) return '#10b981'; // 수락됨 (accepted)
-    if (props.status === 2) return '#ef4444'; // 거절됨 (rejected)
-    return '#6b7280';
-  }};
-    margin-top: 4px;
-`;
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
 
-const ActionButton = styled.button`
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-
-    ${props => props.type === 'accept' && `
-        background-color: #10b981;
-        color: white;
-        border: 1px solid #059669;
-        &:hover {
-            background-color: #059669;
-        }
+    ${props => props.status === 0 && ` /* 대기중 */
+        background-color: #fef3c7;
+        color: #d97706;
     `}
-    ${props => props.type === 'reject' && `
-        background-color: #ef4444;
-        color: white;
-        border: 1px solid #dc2626;
-        &:hover {
-            background-color: #dc2626;
-        }
+    ${props => props.status === 1 && ` /* 수락됨 */
+        background-color: #d1fae5;
+        color: #065f46;
     `}
-    ${props => props.type === 'close' && `
-        background-color: #6b7280;
-        color: white;
-        border: 1px solid #4b5563;
-        &:hover {
-            background-color: #4b5563;
-        }
+    ${props => props.status === 2 && ` /* 거절됨 */
+        background-color: #fee2e2;
+        color: #991b1b;
     `}
-    ${props => props.type === 'edit' && `
-        background-color: #3b82f6; /* 파란색 계열 */
-        color: white;
-        border: 1px solid #2563eb;
-        &:hover {
-            background-color: #2563eb;
-        }
-    `}
-    ${props => props.type === 'delete' && `
-        background-color: #ef4444; /* 빨간색 계열 */
-        color: white;
-        border: 1px solid #dc2626;
-        &:hover {
-            background-color: #dc2626;
-        }
-    `}
-    ${props => props.type === 'save' && `
-        background-color: #10b981; /* 녹색 계열 */
-        color: white;
-        border: 1px solid #059669;
-        &:hover {
-            background-color: #059669;
-        }
-    `}
-    ${props => props.type === 'cancel' && `
-        background-color: #9ca3af; /* 회색 계열 */
-        color: white;
-        border: 1px solid #6b7280;
-        &:hover {
-            background-color: #6b7280;
-        }
-    `}
-`;
-
-const ActionButtonSmall = styled.button`
-    padding: 8px 15px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    background-color: #6b7280; /* 회색 기본 */
-    color: white;
-    border: 1px solid #4b5563;
-    &:hover {
-        background-color: #4b5563;
-    }
-`;
-
-// 모달 오버레이 (기본 z-index)
-const ModalOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000; /* 참여자 확인 모달, 상세 정보 모달 등 기본 모달 */
-`;
-
-// 프로필 모달을 위한 더 높은 z-index를 가진 오버레이
-const ModalOverlayProfile = styled(ModalOverlay)`
-    z-index: 1001; /* 프로필 모달이 다른 모달 위에 나타나도록 더 높은 z-index */
-`;
-
-
-const ModalContent = styled.div`
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    width: 90%;
-    max-width: 500px;
-    position: relative;
-`;
-
-const ModalHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-`;
-
-const ModalTitle = styled.h3`
-    font-size: 22px;
-    font-weight: bold;
-    color: #111827;
-`;
-
-const CloseButton = styled.button`
-    background: none;
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    color: #6b7280;
-    &:hover {
-        color: #374151;
-    }
-`;
-
-const ProfileDetail = styled.p`
-    font-size: 16px;
-    color: #374151;
-    margin-bottom: 10px;
-    strong {
-        color: #111827;
-        margin-right: 5px;
-    }
 `;
 
 const ProfileActions = styled.div`
-    margin-top: 25px;
     display: flex;
     justify-content: flex-end;
-    gap: 10px;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.5rem;
 `;
 
-// 새로 추가된 프로필 이미지 관련 스타일
 const ProfileImageContainer = styled.div`
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
-    overflow: hidden;
-    margin: 0 auto 20px; /* 중앙 정렬 및 하단 간격 */
-    border: 2px solid #7c3aed; /* 테두리 추가 */
     display: flex;
     justify-content: center;
-    align-items: center;
-    background-color: #f0f4f8; /* 이미지가 없을 때 배경색 */
+    margin-bottom: 1.5rem;
 `;
 
 const ProfileImage = styled.img`
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+`;
+
+const ProfileDetail = styled.p`
+    font-size: 1rem;
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+`;
+
+// 이미지 업로드 관련 스타일 추가
+const AvatarContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+`;
+
+const AvatarWrapper = styled.div`
+    position: relative;
+`;
+
+const Avatar = styled.div`
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+`;
+
+const AvatarImage = styled.img`
     width: 100%;
     height: 100%;
-    object-fit: cover; /* 이미지가 컨테이너에 꽉 차도록 */
+    object-fit: cover;
 `;
 
-const FormRow = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 10px;
+const AvatarFallback = styled.div`
+    font-size: 32px;
+    font-weight: bold;
+    color: #6b7280;
 `;
 
+const CameraButton = styled.button`
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #7c3aed;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
 
-export default function ScheduleManagement() {
-  const { userId, userData, placeData } = useContext(UserContext);
-
-  const [scheduleData, setScheduleData] = useState({
-    title: '',
-    description: '',
-    location_name: '',
-    address: '',
-    scheduleDate: '',
-    maxParticipants: '',
-    costPerPerson: '',
-  });
-
-  const [openSchedules, setOpenSchedules] = useState({});
-  const [scheduleMembers, setScheduleMembers] = useState({});
-
-  const [mySchedules, setMySchedules] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
-  const [messageType, setMessageType] = useState('');
-
-  const [selectedMemberProfile, setSelectedMemberProfile] = useState(null);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [currentScheduleIdForModal, setCurrentScheduleIdForModal] = useState(null);
-  const [currentMemberStatusForModal, setCurrentMemberStatusForModal] = useState(null);
-  const [currentModalScheduleCreatorId, setCurrentModalScheduleCreatorId] = useState(null);
-
-  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [selectedScheduleForDetail, setSelectedScheduleForDetail] = useState(null);
-  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
-  const [editableScheduleData, setEditableScheduleData] = useState(null);
-
-  const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
-  const [selectedScheduleForMembers, setSelectedScheduleForMembers] = useState(null);
-
-
-  const showMessage = (msg, type) => {
-    setMessage(msg);
-    setMessageType(type);
-    setTimeout(() => {
-      setMessage('');
-      setMessageType('');
-    }, 5000);
-  };
-
-  const fetchMySchedules = async () => {
-    if (!userId) {
-      setLoading(false);
-      return;
+    &:hover {
+        background-color: #6d28d9;
     }
-    setLoading(true);
-    setError('');
-    try {
-      const response = await axios.post('http://localhost:3001/schedules', { userId });
-      if (response.data.success) {
-        setMySchedules(response.data.data);
-        console.log(response.data.data);
-      } else {
-        setError(response.data.message || '스케쥴을 불러오는 데 실패했습니다.');
-        showMessage(response.data.message || '스케쥴을 불러오는 데 실패했습니다.', 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 로드 오류:', err);
-      setError('스케쥴 정보를 불러오는 중 오류가 발생했습니다.');
-      showMessage('스케쥴 정보를 불러오는 중 오류가 발생했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
+`;
 
-  const fetchScheduleMembers = async (scheduleId) => {
-    try {
-      const response = await axios.get(`http://localhost:3001/schedule_members/${scheduleId}`);
-      if (response.data.success) {
-        setScheduleMembers(prev => ({
-          ...prev,
-          [scheduleId]: response.data.data
-        }));
-      } else {
-        console.error(response.data.message || '참여 요청 목록을 불러오는 데 실패했습니다.');
-      }
-    } catch (err) {
-      console.error(`스케줄 ${scheduleId}의 멤버 로드 오류:`, err);
-    }
-  };
+const HiddenInput = styled.input`
+    display: none;
+`;
 
-  const fetchMemberProfile = async (memberId) => {
-    try {
-      const response = await axios.get(`http://localhost:3001/users/${memberId}`);
-      if (response.data.success) {
-        setSelectedMemberProfile(response.data.data);
-      } else {
-        console.error(response.data.message || '프로필 정보를 불러오는 데 실패했습니다.');
-        setSelectedMemberProfile(null);
-      }
-    } catch (err) {
-      console.error(`사용자 ${memberId} 프로필 로드 오류:`, err);
-      setSelectedMemberProfile(null);
-    }
-  };
+const HelpText = styled.p`
+    font-size: 14px;
+    color: #6b7280;
+    text-align: center;
+`;
+// --- 스타일 컴포넌트 끝 ---
 
-  useEffect(() => {
-    fetchMySchedules();
-  }, [userId]);
+// --- ScheduleManagement 컴포넌트 시작 ---
+export function ScheduleManagement() {
+    const { userId } = useContext(UserContext); // 현재 로그인한 사용자 ID
+    const navigate = useNavigate();
+    const {userData, placeData} = useContext(UserContext);
+    const [schedules, setSchedules] = useState([]);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (userData?.user_type === 1 && placeData) {
-      setScheduleData(prev => ({
-        ...prev,
-        location_name: placeData.place_name || '',
-        address: placeData.address || '',
-      }));
-    }
-  }, [userData, placeData]);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setScheduleData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!userId) {
-      showMessage('로그인 후 스케쥴을 생성할 수 있습니다.', 'error');
-      return;
-    }
-
-    try {
-      const dataToSend = {
-        userId: userId,
-        title: scheduleData.title,
-        description: scheduleData.description,
-        location_name: scheduleData.location_name,
-        address: scheduleData.address,
-        scheduled_date: scheduleData.scheduleDate,
-        max_participants: parseInt(scheduleData.maxParticipants, 10),
-        cost_per_person: parseInt(scheduleData.costPerPerson, 10),
-        user_type: userData?.user_type,
-      };
-
-      const response = await axios.post('http://localhost:3001/createschedule', dataToSend);
-
-      if (response.data.success) {
-        showMessage('스케쥴이 성공적으로 생성되었습니다!', 'success');
-        setScheduleData(prev => ({
-          ...prev,
-          title: '',
-          description: '',
-          scheduleDate: '',
-          maxParticipants: '',
-          costPerPerson: '',
-          ...((userData?.user_type !== 1) && { location_name: '', address: '' })
-        }));
-        fetchMySchedules();
-      } else {
-        showMessage(`스케쥴 생성 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 생성 중 오류 발생:', err);
-      showMessage('스케쥴 생성 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    }
-  };
-
-  const handleOpenDetailModal = (schedule) => {
-    setSelectedScheduleForDetail(schedule);
-    setEditableScheduleData({
-      ...schedule,
-      scheduled_date: schedule.scheduled_date ? new Date(schedule.scheduled_date).toISOString().split('T')[0] : '',
+    const [newSchedule, setNewSchedule] = useState({
+        title: '',
+        description: '',
+        location_name: '',
+        address: '',
+        scheduled_date: '',
+        max_participants: '',
+        cost_per_person: '',
+        schedule_image_url: '', // 이미지 URL 필드 추가
     });
-    setIsDetailModalOpen(true);
-    setIsEditingSchedule(false);
-  };
 
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedScheduleForDetail(null);
-    setIsEditingSchedule(false);
-    setEditableScheduleData(null);
-  };
+    const [editingSchedule, setEditingSchedule] = useState(null);
+    const [selectedScheduleForMembers, setSelectedScheduleForMembers] = useState(null);
+    const [scheduleMembers, setScheduleMembers] = useState({});
+    const [selectedMemberProfile, setSelectedMemberProfile] = useState(null);
+    const [currentMemberStatusForModal, setCurrentMemberStatusForModal] = useState(null);
 
-  const handleEditClick = () => {
-    setIsEditingSchedule(true);
-  };
+    const [message, setMessage] = useState('');
+    const [messageType, setMessageType] = useState('');
 
-  const handleEditableInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditableScheduleData(prev => ({ ...prev, [name]: value }));
-  };
+    const [selectedScheduleImageFile, setSelectedScheduleImageFile] = useState(null);
+    const imageInputRef = useRef(null);
 
-  // 스케줄 수정 저장 (axios.post 사용)
-  const handleUpdateSchedule = async () => {
-    if (!editableScheduleData || !userId) return;
+    const showMessage = (msg, type) => {
+        setMessage(msg);
+        setMessageType(type);
+        // setTimeout(() => {
+        //   setMessage('');
+        //   setMessageType('');
+        // }, 5000);
+    };
 
-    try {
-      const dataToSend = {
-        userId: userId, // 현재 로그인한 사용자 ID
-        scheduleId: editableScheduleData.schedule_id, // 업데이트할 스케줄 ID
-        title: editableScheduleData.title,
-        description: editableScheduleData.description,
-        location_name: editableScheduleData.location_name,
-        address: editableScheduleData.address,
-        scheduled_date: editableScheduleData.scheduled_date,
-        max_participants: parseInt(editableScheduleData.max_participants, 10),
-        cost_per_person: parseInt(editableScheduleData.cost_per_person, 10),
-        user_type: userData?.user_type,
-        _method: 'PUT' // 백엔드에서 POST 요청을 PUT으로 해석하도록 돕는 필드 (선택 사항)
-      };
+    // 스케줄 목록 불러오기
+    const fetchSchedules = useCallback(async () => {
+        if (!userId) return;
+        try {
+            const res = await axios.post('http://localhost:3001/schedules', { userId });
+            if (res.data.success) {
+                setSchedules(res.data.data);
+            } else {
+                showMessage(`스케줄 로드 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 로드 중 오류 발생:', error);
+            showMessage('스케줄 정보를 불러오는 데 실패했습니다.', 'error');
+        }
+    }, [userId]);
 
-      // axios.post로 변경
-      const response = await axios.post(`http://localhost:3001/updateSchedule`, dataToSend);
+    useEffect(() => {
+        fetchSchedules();
+    }, [fetchSchedules]);
 
-      if (response.data.success) {
-        showMessage('스케쥴이 성공적으로 업데이트되었습니다!', 'success');
-        setIsEditingSchedule(false);
-        handleCloseDetailModal();
-        fetchMySchedules();
-      } else {
-        showMessage(`스케쥴 업데이트 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 업데이트 중 오류 발생:', err);
-      showMessage('스케쥴 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    }
-  };
+    // --- 모달 열고 닫는 함수들 ---
+    const handleOpenCreateModal = () => {
+        setNewSchedule({
+            title: '', description: '', location_name: '', address: '',
+            scheduled_date: '', max_participants: '', cost_per_person: '',
+            schedule_image_url: '',
+        });
+        // user_type이 1이고 placeData가 있을 때 자동 채우기
+        if (userData && userData.user_type === 1 && placeData) {
+            setNewSchedule({
+            title: '', description: '', location_name: placeData.place_name, address: placeData.address,
+            scheduled_date: '', max_participants: '', cost_per_person: '',
+            schedule_image_url: '',
+        });
+        } else {
+            // user_type이 1이 아니거나 placeData가 없으면 빈 값으로 초기화
+            setNewSchedule({
+            title: '', description: '', location_name: '', address: '',
+            scheduled_date: '', max_participants: '', cost_per_person: '',
+            schedule_image_url: '', });
+        }
+        setSelectedScheduleImageFile(null); // 파일 선택 초기화
+        setIsCreateModalOpen(true);
+        setMessage('');
+    };
 
-  // 스케줄 삭제 (axios.post 사용)
-  const handleDeleteSchedule = async () => {
-    if (!selectedScheduleForDetail || !userId) return;
+    const handleCloseCreateModal = () => {
+        setIsCreateModalOpen(false);
+    };
 
-    if (!window.confirm('정말로 이 스케쥴을 삭제하시겠습니까?')) {
-      return;
-    }
+    const handleOpenEditModal = (schedule) => {
+        setEditingSchedule({
+            ...schedule,
+            scheduled_date: schedule.scheduled_date ? schedule.scheduled_date.substring(0, 10) : '',
+        });
+        setSelectedScheduleImageFile(null); // 파일 선택 초기화
+        setIsEditModalOpen(true);
+        setMessage('');
+    };
 
-    try {
-      const dataToSend = {
-        userId: userId, // 현재 로그인한 사용자 ID
-        scheduleId: selectedScheduleForDetail.schedule_id, // 삭제할 스케줄 ID
-        _method: 'DELETE' // 백엔드에서 POST 요청을 DELETE로 해석하도록 돕는 필드 (선택 사항)
-      };
+    const handleCloseEditModal = () => {
+        setIsEditModalOpen(false);
+        setEditingSchedule(null);
+    };
 
-      // axios.post로 변경
-      const response = await axios.post(`http://localhost:3001/deleteSchedule`, dataToSend);
+    const handleOpenMembersModal = (schedule) => {
+        setSelectedScheduleForMembers(schedule);
+        if (!scheduleMembers[schedule.schedule_id]) {
+            fetchScheduleMembers(schedule.schedule_id);
+        }
+        setIsMembersModalOpen(true);
+        setMessage('');
+    };
 
-      if (response.data.success) {
-        showMessage('스케쥴이 성공적으로 삭제되었습니다!', 'success');
-        handleCloseDetailModal();
-        fetchMySchedules();
-      } else {
-        showMessage(`스케쥴 삭제 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 삭제 중 오류 발생:', err);
-      showMessage('스케쥴 삭제 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    }
-  };
+    const handleCloseMembersModal = () => {
+        setIsMembersModalOpen(false);
+        setSelectedScheduleForMembers(null);
+    };
 
+    const handleCloseProfileModal = () => {
+        setIsProfileModalOpen(false);
+        setSelectedMemberProfile(null);
+        setCurrentMemberStatusForModal(null);
+    };
 
-  const handleOpenMembersModal = async (scheduleId, creatorId) => {
-    const schedule = mySchedules.find(s => s.schedule_id === scheduleId);
-    setSelectedScheduleForMembers(schedule);
-    setCurrentModalScheduleCreatorId(creatorId);
-    await fetchScheduleMembers(scheduleId);
-    setIsMembersModalOpen(true);
-  };
+    // --- 입력 값 변경 핸들러 ---
+    const handleNewScheduleChange = (e) => {
+        const { name, value } = e.target;
+        setNewSchedule(prev => ({ ...prev, [name]: value }));
+    };
 
-  const handleCloseMembersModal = () => {
-    setIsMembersModalOpen(false);
-    setSelectedScheduleForMembers(null);
-  };
+    const handleEditingScheduleChange = (e) => {
+        const { name, value } = e.target;
+        setEditingSchedule(prev => ({ ...prev, [name]: value }));
+    };
 
-  const handleMemberClickForProfile = async (e, scheduleId, memberId, memberStatus) => {
-    e.stopPropagation();
-    setCurrentScheduleIdForModal(scheduleId);
-    setCurrentMemberStatusForModal(memberStatus);
+    // --- 이미지 파일 선택 핸들러 ---
+    const handleImageSelect = (event, isForNewSchedule) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            setSelectedScheduleImageFile(file); // 선택된 파일 객체 저장
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const result = e.target?.result;
+                if (isForNewSchedule) {
+                    setNewSchedule(prev => ({ ...prev, schedule_image_url: result })); // 미리보기용 URL 설정
+                } else {
+                    setEditingSchedule(prev => ({ ...prev, schedule_image_url: result })); // 미리보기용 URL 설정
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
-    const selectedSchedule = mySchedules.find(s => s.schedule_id === scheduleId);
-    if (selectedSchedule) {
-      setCurrentModalScheduleCreatorId(selectedSchedule.creator_id);
-    }
-
-    await fetchMemberProfile(memberId);
-    setIsProfileModalOpen(true);
-  };
-
-  const handleCloseProfileModal = () => {
-    setIsProfileModalOpen(false);
-    setSelectedMemberProfile(null);
-    setCurrentScheduleIdForModal(null);
-    setCurrentMemberStatusForModal(null);
-    setCurrentModalScheduleCreatorId(null);
-  };
-
-  const handleAcceptReject = async (action) => {
-    if (!selectedMemberProfile || !currentScheduleIdForModal) return;
-
-    const scheduleId = currentScheduleIdForModal;
-    // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
-    const requestedUserId = selectedMemberProfile.user_id;
-
-    try {
-      const endpoint = action === 'accept' ? 'accept' : 'reject';
-      const response = await axios.post(`http://localhost:3001/schedule/${endpoint}`, {
-        scheduleId: scheduleId,
-        reqUserId: requestedUserId,
-      });
-
-      if (response.data.success) {
-        showMessage(`요청이 성공적으로 ${action === 'accept' ? '수락' : '거절'}되었습니다.`, 'success');
-        handleCloseProfileModal();
-        fetchScheduleMembers(scheduleId);
-        fetchMySchedules();
-      } else {
-        showMessage(response.data.message || `요청 ${action === 'accept' ? '수락' : '거절'}에 실패했습니다.`, 'error');
-      }
-    } catch (err) {
-      console.error(`요청 ${action === 'accept' ? '수락' : '거절'} 중 오류 발생:`, err);
-      showMessage(`요청 ${action === 'accept' ? '수락' : '거절'} 중 오류가 발생했습니다.`, 'error');
-    }
-  };
+    const handleImageClick = (isForNewSchedule) => {
+        // fileInputRef는 하나만 사용되므로, true/false로 구분할 필요 없이 항상 imageInputRef를 사용
+        imageInputRef.current?.click();
+    };
 
 
-  return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>새로운 일정 생성</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {message && (
-            <MessageBar type={messageType}>
-              {message}
-            </MessageBar>
-          )}
-          <FormGrid onSubmit={handleSubmit}>
-            <FormGroup>
-              <Label htmlFor="title">제목</Label>
-              <Input
-                type="text"
-                id="title"
-                name="title"
-                value={scheduleData.title}
-                onChange={handleInputChange}
-                placeholder="일정 제목을 입력하세요"
-                required
-              />
-            </FormGroup>
+    // --- 새로운 스케줄 생성 ---
+    const createSchedule = async () => {
+        if (!userId) {
+            showMessage('로그인 후 스케줄을 생성할 수 있습니다.', 'error');
+            return;
+        }
 
-            <FormGroup>
-              <Label htmlFor="scheduleDate">스케쥴 날짜</Label>
-              <Input
-                type="date"
-                id="scheduleDate"
-                name="scheduleDate"
-                value={scheduleData.scheduleDate}
-                onChange={handleInputChange}
-                required
-              />
-            </FormGroup>
+        if (!newSchedule.title || !newSchedule.address || !newSchedule.scheduled_date || !newSchedule.max_participants || !newSchedule.cost_per_person) {
+            showMessage('필수 필드를 모두 입력해주세요 (제목, 주소, 날짜, 최대 참여 인원, 예상 비용).', 'error');
+            return;
+        }
 
-            <FormGroup>
-              <Label htmlFor="location_name">장소명 (선택 사항)</Label>
-              <Input
-                type="text"
-                id="location_name"
-                name="location_name"
-                value={scheduleData.location_name}
-                onChange={handleInputChange}
-                placeholder="예: 우리 동네 카페, 광주공원"
-                readOnly={userData?.user_type === 1}
-                style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-              />
-            </FormGroup>
+        try {
+            let finalScheduleImageUrl = '';
+            // 1. 새 파일이 선택되었다면 AWS S3에 직접 업로드
+            if (selectedScheduleImageFile) {
+                console.log('새 스케줄 이미지 업로드 중 (AWS S3 직접 업로드)...');
+                const fileExtension = selectedScheduleImageFile.name.split('.').pop();
+                const s3Key = `schedule_images/${userId}/${Date.now()}.${fileExtension}`;
 
-            <FormGroup>
-              <Label htmlFor="maxParticipants">최대 참여 인원</Label>
-              <Input
-                type="number"
-                id="maxParticipants"
-                name="maxParticipants"
-                value={scheduleData.maxParticipants}
-                onChange={handleInputChange}
-                placeholder="최대 참여 인원을 입력하세요"
-                min="1"
-                required
-              />
-            </FormGroup>
+                const arrayBuffer = await selectedScheduleImageFile.arrayBuffer();
+                const bodyData = new Uint8Array(arrayBuffer);
 
-            <FormGroup>
-              <Label htmlFor="costPerPerson">1인당 비용</Label>
-              <Input
-                type="number"
-                id="costPerPerson"
-                name="costPerPerson"
-                value={scheduleData.costPerPerson}
-                onChange={handleInputChange}
-                placeholder="1인당 비용을 입력하세요 (숫자만)"
-                min="0"
-                required
-              />
-            </FormGroup>
+                const command = new PutObjectCommand({
+                    Bucket: awsConfig.bucketName,
+                    Key: s3Key,
+                    Body: bodyData,
+                    ContentType: selectedScheduleImageFile.type,
+                    ACL: 'public-read'
+                });
 
-            <FormGroup className="full-width">
-              <Label htmlFor="address">주소</Label>
-              <Input
-                type="text"
-                id="address"
-                name="address"
-                value={scheduleData.address}
-                onChange={handleInputChange}
-                placeholder="일정 장소 주소를 입력하세요 (예: 서울특별시 강남구 테헤란로 123)"
-                required
-                readOnly={userData?.user_type === 1}
-                style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-              />
-            </FormGroup>
+                await s3Client.send(command);
+                finalScheduleImageUrl = `https://${awsConfig.bucketName}.s3.${awsConfig.region}.amazonaws.com/${s3Key}`;
+                console.log('AWS S3 직접 업로드 완료. URL:', finalScheduleImageUrl);
+            }
 
-            <FormGroup className="full-width">
-              <Label htmlFor="description">설명</Label>
-              <TextArea
-                id="description"
-                name="description"
-                value={scheduleData.description}
-                onChange={handleInputChange}
-                placeholder="일정에 대한 자세한 설명을 입력하세요"
-                rows="4"
-              />
-            </FormGroup>
+            const dataToSend = {
+                userId: userId,
+                title: newSchedule.title,
+                description: newSchedule.description,
+                location_name: newSchedule.location_name,
+                address: newSchedule.address,
+                scheduled_date: newSchedule.scheduled_date,
+                max_participants: parseInt(newSchedule.max_participants),
+                cost_per_person: parseFloat(newSchedule.cost_per_person),
+                schedule_image_url: finalScheduleImageUrl,
+            };
+            console.log('생성할 스케줄 데이터:', dataToSend);
 
-            <SubmitButton type="submit">일정 생성하기</SubmitButton>
-          </FormGrid>
-        </CardContent>
-      </Card>
+            const res = await axios.post('http://localhost:3001/createschedule', dataToSend);
+            if (res.data.success) {
+                showMessage('스케줄이 성공적으로 생성되었습니다!', 'success');
+                handleCloseCreateModal();
+                fetchSchedules();
+            } else {
+                showMessage(`스케줄 생성 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 생성 중 오류 발생:', error);
+            showMessage('스케줄 생성 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        }
+    };
 
-      <Card>
-        <CardHeader>
-          <CardTitle>내 스케쥴 목록</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <NoScheduleMessage>스케쥴을 불러오는 중입니다...</NoScheduleMessage>
-          ) : error ? (
-            <NoScheduleMessage>{error}</NoScheduleMessage>
-          ) : mySchedules.length > 0 ? (
-            <ScheduleListContainer>
-              {mySchedules.map((schedule) => (
-                <ScheduleItem key={schedule.schedule_id}>
-                  <ScheduleItemHeader>
-                    <ScheduleItemTitle>{schedule.title}</ScheduleItemTitle>
-                    <ScheduleItemParticipants>
-                      대기인원 : {schedule.pending_people ? schedule.pending_people : 0} 명, 참여인원 : {schedule.checked_people} / {schedule.max_participants}명
-                    </ScheduleItemParticipants>
-                  </ScheduleItemHeader>
-                  <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                    <ActionButtonSmall onClick={(e) => { e.stopPropagation(); handleOpenDetailModal(schedule); }}>
-                      상세 정보
-                    </ActionButtonSmall>
-                    <ActionButtonSmall onClick={(e) => { e.stopPropagation(); handleOpenMembersModal(schedule.schedule_id, schedule.creator_id); }}>
-                      참여자 확인
-                    </ActionButtonSmall>
-                  </div>
-                </ScheduleItem>
-              ))}
-            </ScheduleListContainer>
-          ) : (
-            <NoScheduleMessage>등록된 스케쥴이 없습니다.</NoScheduleMessage>
-          )}
-        </CardContent>
-      </Card>
+    // --- 스케줄 수정 ---
+    const updateSchedule = async () => {
+        if (!userId || !editingSchedule || !editingSchedule.schedule_id) {
+            showMessage('스케줄을 수정할 수 없습니다.', 'error');
+            return;
+        }
 
-      {/* 스케줄 상세 정보 모달 */}
-      {isDetailModalOpen && selectedScheduleForDetail && (
-        <ModalOverlay onClick={handleCloseDetailModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>{isEditingSchedule ? '스케쥴 수정' : '스케쥴 상세 정보'}</ModalTitle>
-              <CloseButton onClick={handleCloseDetailModal}>닫기</CloseButton>
-            </ModalHeader>
-            <div>
-              <FormRow>
-                <Label htmlFor="title_detail">제목</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="title_detail"
-                    name="title"
-                    value={editableScheduleData?.title || ''}
-                    onChange={handleEditableInputChange}
-                  />
-                ) : (
-                  <ProfileDetail><strong>{selectedScheduleForDetail.title}</strong></ProfileDetail>
-                )}
-              </FormRow>
+        if (!editingSchedule.title || !editingSchedule.address || !editingSchedule.scheduled_date || !editingSchedule.max_participants || !editingSchedule.cost_per_person) {
+            showMessage('필수 필드를 모두 입력해주세요 (제목, 주소, 날짜, 최대 참여 인원, 예상 비용).', 'error');
+            return;
+        }
 
-              <FormRow>
-                <Label htmlFor="description_detail">설명</Label>
-                {isEditingSchedule ? (
-                  <TextArea
-                    id="description_detail"
-                    name="description"
-                    value={editableScheduleData?.description || ''}
-                    onChange={handleEditableInputChange}
-                    rows="3"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.description || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
+        try {
+            let finalScheduleImageUrl = editingSchedule.schedule_image_url;
 
-              <FormRow>
-                <Label htmlFor="scheduleDate_detail">날짜</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="date"
-                    id="scheduleDate_detail"
-                    name="scheduled_date"
-                    value={editableScheduleData?.scheduled_date || ''}
-                    onChange={handleEditableInputChange}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.scheduled_date ? new Date(selectedScheduleForDetail.scheduled_date).toLocaleDateString('ko-KR') : '날짜 없음'}</ProfileDetail>
-                )}
-              </FormRow>
+            // 1. 새 파일이 선택되었다면 AWS S3에 직접 업로드
+            if (selectedScheduleImageFile) {
+                console.log('스케줄 이미지 업데이트 중 (AWS S3 직접 업로드)...');
+                const fileExtension = selectedScheduleImageFile.name.split('.').pop();
+                const s3Key = `schedule_images/${Date.now()}.${fileExtension}`;
 
-              <FormRow>
-                <Label htmlFor="location_name_detail">장소명</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="location_name_detail"
-                    name="location_name"
-                    value={editableScheduleData?.location_name || ''}
-                    onChange={handleEditableInputChange}
-                    readOnly={userData?.user_type === 1}
-                    style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.location_name || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
+                const arrayBuffer = await selectedScheduleImageFile.arrayBuffer();
+                const bodyData = new Uint8Array(arrayBuffer);
 
-              <FormRow>
-                <Label htmlFor="address_detail">주소</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="address_detail"
-                    name="address"
-                    value={editableScheduleData?.address || ''}
-                    onChange={handleEditableInputChange}
-                    readOnly={userData?.user_type === 1}
-                    style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.address || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
+                const command = new PutObjectCommand({
+                    Bucket: awsConfig.bucketName,
+                    Key: s3Key,
+                    Body: bodyData,
+                    ContentType: selectedScheduleImageFile.type,
+                    ACL: 'public-read'
+                });
 
-              <FormRow>
-                <Label htmlFor="maxParticipants_detail">최대 참여 인원</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="number"
-                    id="maxParticipants_detail"
-                    name="max_participants"
-                    value={editableScheduleData?.max_participants || ''}
-                    onChange={handleEditableInputChange}
-                    min="1"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.checked_people} / {selectedScheduleForDetail.max_participants}명</ProfileDetail>
-                )}
-              </FormRow>
+                await s3Client.send(command);
+                finalScheduleImageUrl = `https://${awsConfig.bucketName}.s3.${awsConfig.region}.amazonaws.com/${s3Key}`;
+                console.log('AWS S3 직접 업로드 완료. URL:', finalScheduleImageUrl);
+            }
 
-              <FormRow>
-                <Label htmlFor="costPerPerson_detail">1인당 비용</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="number"
-                    id="costPerPerson_detail"
-                    name="cost_per_person"
-                    value={editableScheduleData?.cost_per_person || ''}
-                    onChange={handleEditableInputChange}
-                    min="0"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.cost_per_person?.toLocaleString()}원</ProfileDetail>
-                )}
-              </FormRow>
-            </div>
-            <ProfileActions>
-              {isEditingSchedule ? (
-                <>
-                  <ActionButton type="save" onClick={handleUpdateSchedule}>저장</ActionButton>
-                  <ActionButton type="cancel" onClick={() => setIsEditingSchedule(false)}>취소</ActionButton>
-                </>
-              ) : (
-                <>
-                  <ActionButton type="edit" onClick={handleEditClick}>수정</ActionButton>
-                  <ActionButton type="delete" onClick={handleDeleteSchedule}>삭제</ActionButton>
-                </>
-              )}
-              <ActionButton type="close" onClick={handleCloseDetailModal}>
-                닫기
-              </ActionButton>
-            </ProfileActions>
-          </ModalContent>
-        </ModalOverlay>
-      )}
+            const dataToSend = {
+                userId: userId,
+                scheduleId: editingSchedule.schedule_id,
+                title: editingSchedule.title,
+                description: editingSchedule.description,
+                location_name: editingSchedule.location_name,
+                address: editingSchedule.address,
+                scheduled_date: editingSchedule.scheduled_date,
+                max_participants: parseInt(editingSchedule.max_participants),
+                cost_per_person: parseFloat(editingSchedule.cost_per_person),
+                schedule_image_url: finalScheduleImageUrl,
+            };
+            console.log('수정할 스케줄 데이터:', dataToSend);
 
-      {/* 스케줄 참여자 확인 모달 */}
-      {isMembersModalOpen && selectedScheduleForMembers && (
-        <ModalOverlay onClick={handleCloseMembersModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>{selectedScheduleForMembers.title} 참여자 목록</ModalTitle>
-              <CloseButton onClick={handleCloseMembersModal}>닫기</CloseButton>
-            </ModalHeader>
-            <ScheduleMembersSection style={{ borderTop: 'none', paddingTop: '0' }}>
-              <SectionTitle>참여 요청 ({scheduleMembers[selectedScheduleForMembers.schedule_id]?.length || 0}건)</SectionTitle>
-              {scheduleMembers[selectedScheduleForMembers.schedule_id]?.length > 0 ? (
-                <MemberList>
-                  {scheduleMembers[selectedScheduleForMembers.schedule_id].map((member) => (
-                    <MemberItem
-                      key={member.req_user_id}
-                      onClick={(e) => handleMemberClickForProfile(e, selectedScheduleForMembers.schedule_id, member.req_user_id, member.req_status)}
-                    >
-                      <MemberInfo>
-                        <MemberName>{member.user_name} ({member.req_user_id})</MemberName>
-                        <MemberStatus status={member.req_status}>
-                          {member.req_status === 0 && '대기중❕'}
-                          {member.req_status === 1 && '수락됨✅'}
-                          {member.req_status === 2 && '거절됨❌'}
-                        </MemberStatus>
-                      </MemberInfo>
-                    </MemberItem>
-                  ))}
-                </MemberList>
-              ) : (
-                <p>아직 참여 요청이 없습니다.</p>
-              )}
-            </ScheduleMembersSection>
-            <ProfileActions>
-              <ActionButton type="close" onClick={handleCloseMembersModal}>
-                닫기
-              </ActionButton>
-            </ProfileActions>
-          </ModalContent>
-        </ModalOverlay>
-      )}
+            const res = await axios.post('http://localhost:3001/updateSchedule', dataToSend);
+            if (res.data.success) {
+                showMessage('스케줄이 성공적으로 업데이트되었습니다!', 'success');
+                handleCloseEditModal();
+                fetchSchedules();
+            } else {
+                showMessage(`스케줄 업데이트 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 업데이트 중 오류 발생:', error);
+            showMessage('스케줄 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        }
+    };
 
-      {/* 프로필 모달 (가장 높은 z-index) */}
-      {isProfileModalOpen && selectedMemberProfile && (
-        <ModalOverlayProfile onClick={handleCloseProfileModal}>
-          <ModalContent onClick={(e) => e.stopPropagation()}>
-            <ModalHeader>
-              <ModalTitle>{selectedMemberProfile.user_id}님의 프로필</ModalTitle>
-              <CloseButton onClick={handleCloseProfileModal}>닫기</CloseButton>
-            </ModalHeader>
-            <ProfileImageContainer>
-              {selectedMemberProfile.profile_image_url ? (
-                <ProfileImage src={selectedMemberProfile.profile_image_url} alt="프로필 이미지" />
-              ) : (
-                <ProfileImage src="/default-profile.png" alt="기본 프로필 이미지" />
-              )}
-            </ProfileImageContainer>
-            <div>
-              <ProfileDetail><strong>닉네임:</strong> {selectedMemberProfile.nickname}</ProfileDetail>
-              <ProfileDetail><strong>성별:</strong> {selectedMemberProfile.gender}</ProfileDetail>
-              <ProfileDetail><strong>생년월일:</strong> {new Date(selectedMemberProfile.birth_date).toLocaleDateString('ko-KR')}</ProfileDetail>
-              <ProfileDetail><strong>휴대폰:</strong> {selectedMemberProfile.phone_number}</ProfileDetail>
-              <ProfileDetail><strong>mbti:</strong> {selectedMemberProfile.mbti}</ProfileDetail>
-              <ProfileDetail><strong>자기소개:</strong> {selectedMemberProfile.introduce || '없음'}</ProfileDetail>
-            </div>
-            <ProfileActions>
-              
-                <>
-                  <ActionButton type="accept" onClick={() => handleAcceptReject('accept')}>
-                    수락
-                  </ActionButton>
-                  <ActionButton type="reject" onClick={() => handleAcceptReject('reject')}>
-                    거절
-                  </ActionButton>
-                </>
-              
-              <ActionButton type="close" onClick={handleCloseProfileModal}>
-                닫기
-              </ActionButton>
-            </ProfileActions>
-          </ModalContent>
-        </ModalOverlayProfile>
-      )}
-    </>
-  );
+    // --- 스케줄 삭제 ---
+    const deleteSchedule = async (scheduleId) => {
+        if (!window.confirm('정말로 이 스케줄을 삭제하시겠습니까? 관련 참여 요청도 모두 삭제됩니다.')) {
+            return;
+        }
+        try {
+            const res = await axios.post('http://localhost:3001/deleteSchedule', { userId, scheduleId });
+            if (res.data.success) {
+                showMessage('스케줄이 성공적으로 삭제되었습니다!', 'success');
+                fetchSchedules();
+            } else {
+                showMessage(`스케줄 삭제 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 삭제 중 오류 발생:', error);
+            showMessage('스케줄 삭제 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        }
+    };
+
+    // --- 스케줄 멤버 불러오기 ---
+    const fetchScheduleMembers = async (scheduleId) => {
+        try {
+            const res = await axios.get(`http://localhost:3001/schedule_members/${scheduleId}`);
+            if (res.data.success) {
+                setScheduleMembers(prev => ({
+                    ...prev,
+                    [scheduleId]: res.data.data
+                }));
+            } else {
+                showMessage(`멤버 목록 로드 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 멤버 로드 중 오류 발생:', error);
+            showMessage('참여자 목록을 불러오는 데 실패했습니다.', 'error');
+        }
+    };
+
+    // --- 멤버 프로필 클릭 시 (모달 열기 및 프로필 데이터 가져오기) ---
+    const handleMemberClickForProfile = async (e, scheduleId, memberId, reqStatus) => {
+        e.stopPropagation();
+        try {
+            // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
+            const res = await axios.post('http://localhost:3001/mypage', { userId: memberId });
+            if (res.data.success) {
+                const memberProfile = res.data.data.user;
+                setSelectedMemberProfile(memberProfile);
+                setCurrentMemberStatusForModal(reqStatus);
+                setIsProfileModalOpen(true);
+            } else {
+                showMessage(`프로필 로드 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('멤버 프로필 로드 중 오류 발생:', error);
+            showMessage('멤버 프로필을 불러오는 데 실패했습니다.', 'error');
+        }
+    };
+
+    // --- 참여 요청 수락/거절 처리 ---
+    const handleAcceptReject = async (actionType) => {
+        if (!selectedScheduleForMembers || !selectedMemberProfile) return;
+
+        const url = actionType === 'accept' ? 'http://localhost:3001/schedule/accept' : 'http://localhost:3001/schedule/reject';
+        const message = actionType === 'accept' ? '수락' : '거절';
+
+        try {
+            const res = await axios.post(url, {
+                scheduleId: selectedScheduleForMembers.schedule_id,
+                reqUserId: selectedMemberProfile.user_id,
+            });
+
+            if (res.data.success) {
+                showMessage(`참여 요청이 성공적으로 ${message}되었습니다!`, 'success');
+                fetchScheduleMembers(selectedScheduleForMembers.schedule_id);
+                handleCloseProfileModal();
+                fetchSchedules();
+            } else {
+                showMessage(`참여 요청 ${message} 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error(`참여 요청 ${message} 중 오류 발생:`, error);
+            showMessage(`참여 요청 ${message} 중 오류가 발생했습니다.`, 'error');
+        }
+    };
+
+    return (
+        <PageContainer>
+            <Header>
+                <Title>내 스케줄 관리</Title>
+                <Button variant="primary" onClick={handleOpenCreateModal}>
+                    <Plus size={20} />
+                    새 스케줄 생성
+                </Button>
+            </Header>
+
+            {message && (
+                <MessageBar type={messageType}>
+                    {message}
+                </MessageBar>
+            )}
+
+            {schedules.length === 0 ? (
+                <EmptyState>생성된 스케줄이 없습니다. 새로운 스케줄을 만들어 보세요!</EmptyState>
+            ) : (
+                <ScheduleGrid>
+                    {schedules.map((schedule) => (
+                        <ScheduleCard key={schedule.schedule_id}>
+                            {schedule.schedule_image_url ? (
+                                <CardImage src={schedule.schedule_image_url} alt="Schedule Image" />
+                            ) : (
+                                <CardImage as="div">No Image</CardImage>
+                            )}
+                            <CardContent>
+                                <CardTitle>{schedule.title}</CardTitle>
+                                <CardDescription>{schedule.description || '설명 없음'}</CardDescription>
+                                <CardDetail>
+                                    <strong>장소:</strong> {schedule.location_name || ''} ({schedule.address})
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>날짜:</strong> {new Date(schedule.scheduled_date).toLocaleDateString('ko-KR')}
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>참여자:</strong> {schedule.checked_people || 0} / {schedule.max_participants}명
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>대기중:</strong> {schedule.pending_people || 0}명
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>비용:</strong> {schedule.cost_per_person.toLocaleString()}원/인
+                                </CardDetail>
+                                <CardActions>
+                                    <ActionButton type="members" onClick={() => handleOpenMembersModal(schedule)}>
+                                        <Plus size={16} /> 참여자 ({schedule.checked_people + schedule.pending_people})
+                                    </ActionButton>
+                                    <ActionButton type="edit" onClick={() => handleOpenEditModal(schedule)}>
+                                        <Edit size={16} /> 수정
+                                    </ActionButton>
+                                    <ActionButton type="delete" onClick={() => deleteSchedule(schedule.schedule_id)}>
+                                        <Trash2 size={16} /> 삭제
+                                    </ActionButton>
+                                </CardActions>
+                            </CardContent>
+                        </ScheduleCard>
+                    ))}
+                </ScheduleGrid>
+            )}
+
+            {/* 새 스케줄 생성 모달 */}
+            {isCreateModalOpen && (
+                <ModalOverlay onClick={handleCloseCreateModal}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
+                        <ModalHeader>
+                            <ModalTitle>새 스케줄 생성</ModalTitle>
+                            <CloseButton onClick={handleCloseCreateModal}>닫기</CloseButton>
+                        </ModalHeader>
+                        {message && (
+                            <MessageBar type={messageType}>
+                                {message}
+                            </MessageBar>
+                        )}
+                        {/* 이미지 업로드 UI 추가 */}
+                        <AvatarContainer>
+                            <AvatarWrapper>
+                                <Avatar>
+                                    {newSchedule.schedule_image_url ? (
+                                        <AvatarImage src={newSchedule.schedule_image_url} alt="Schedule Preview" />
+                                    ) : (
+                                        <AvatarFallback>No Image</AvatarFallback>
+                                    )}
+                                </Avatar>
+                                <CameraButton type="button" onClick={() => handleImageClick(true)}>
+                                    <Camera size={16} />
+                                </CameraButton>
+                                <HiddenInput
+                                    ref={imageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleImageSelect(e, true)}
+                                />
+                            </AvatarWrapper>
+                            <HelpText>스케줄 대표 이미지를 변경하려면 카메라 아이콘을 클릭하세요</HelpText>
+                        </AvatarContainer>
+                        <FormGroup>
+                            <Label htmlFor="create-title">제목</Label>
+                            <Input
+                                id="create-title"
+                                type="text"
+                                name="title"
+                                value={newSchedule.title}
+                                onChange={handleNewScheduleChange}
+                                placeholder="스케줄 제목"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-description">설명</Label>
+                            <Textarea
+                                id="create-description"
+                                name="description"
+                                value={newSchedule.description}
+                                onChange={handleNewScheduleChange}
+                                placeholder="스케줄에 대한 자세한 설명"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-location-name">장소명 (선택)</Label>
+                            <Input
+                                id="create-location-name"
+                                type="text"
+                                name="location_name"
+                                value={newSchedule.location_name}
+                                onChange={handleNewScheduleChange}
+                                placeholder="예: 강남역 스타벅스"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-address">주소</Label>
+                            <Input
+                                id="create-address"
+                                type="text"
+                                name="address"
+                                value={newSchedule.address}
+                                onChange={handleNewScheduleChange}
+                                placeholder="예: 서울 강남구 테헤란로 123"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-date">날짜</Label>
+                            <Input
+                                id="create-date"
+                                type="date"
+                                name="scheduled_date"
+                                value={newSchedule.scheduled_date}
+                                onChange={handleNewScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-max-participants">최대 참여 인원</Label>
+                            <Input
+                                id="create-max-participants"
+                                type="number"
+                                name="max_participants"
+                                value={newSchedule.max_participants}
+                                onChange={handleNewScheduleChange}
+                                placeholder="최대 참여 가능한 인원"
+                                min="1"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="create-cost">예상 비용 (1인당)</Label>
+                            <Input
+                                id="create-cost"
+                                type="number"
+                                name="cost_per_person"
+                                value={newSchedule.cost_per_person}
+                                onChange={handleNewScheduleChange}
+                                placeholder="1인당 예상 비용 (원)"
+                                min="0"
+                            />
+                        </FormGroup>
+                        <FormActions>
+                            <Button variant="outline" onClick={handleCloseCreateModal}>
+                                <X size={16} /> 취소
+                            </Button>
+                            <Button variant="primary" onClick={createSchedule}>
+                                <Save size={16} /> 생성
+                            </Button>
+                        </FormActions>
+                    </ModalContent>
+                </ModalOverlay>
+            )}
+
+            {/* 스케줄 수정 모달 */}
+            {isEditModalOpen && editingSchedule && (
+                <ModalOverlay onClick={handleCloseEditModal}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
+                        <ModalHeader>
+                            <ModalTitle>스케줄 수정</ModalTitle>
+                            <CloseButton onClick={handleCloseEditModal}>닫기</CloseButton>
+                        </ModalHeader>
+                        {message && (
+                            <MessageBar type={messageType}>
+                                {message}
+                            </MessageBar>
+                        )}
+                        <AvatarContainer>
+                            <AvatarWrapper>
+                                <Avatar>
+                                    {editingSchedule.schedule_image_url ? (
+                                        <AvatarImage src={editingSchedule.schedule_image_url} alt="Schedule Preview" />
+                                    ) : (
+                                        <AvatarFallback>No Image</AvatarFallback>
+                                    )}
+                                </Avatar>
+                                <CameraButton type="button" onClick={() => handleImageClick(false)}>
+                                    <Camera size={16} />
+                                </CameraButton>
+                                <HiddenInput
+                                    ref={imageInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => handleImageSelect(e, false)}
+                                />
+                            </AvatarWrapper>
+                            <HelpText>스케줄 대표 이미지를 변경하려면 카메라 아이콘을 클릭하세요</HelpText>
+                        </AvatarContainer>
+                        <FormGroup>
+                            <Label htmlFor="edit-title">제목</Label>
+                            <Input
+                                id="edit-title"
+                                type="text"
+                                name="title"
+                                value={editingSchedule.title}
+                                onChange={handleEditingScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-description">설명</Label>
+                            <Textarea
+                                id="edit-description"
+                                name="description"
+                                value={editingSchedule.description}
+                                onChange={handleEditingScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-location-name">장소명 (선택)</Label>
+                            <Input
+                                id="edit-location-name"
+                                type="text"
+                                name="location_name"
+                                value={editingSchedule.location_name}
+                                onChange={handleEditingScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-address">주소</Label>
+                            <Input
+                                id="edit-address"
+                                type="text"
+                                name="address"
+                                value={editingSchedule.address}
+                                onChange={handleEditingScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-date">날짜</Label>
+                            <Input
+                                id="edit-date"
+                                type="date"
+                                name="scheduled_date"
+                                value={editingSchedule.scheduled_date}
+                                onChange={handleEditingScheduleChange}
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-max-participants">최대 참여 인원</Label>
+                            <Input
+                                id="edit-max-participants"
+                                type="number"
+                                name="max_participants"
+                                value={editingSchedule.max_participants}
+                                onChange={handleEditingScheduleChange}
+                                min="1"
+                            />
+                        </FormGroup>
+                        <FormGroup>
+                            <Label htmlFor="edit-cost">예상 비용 (1인당)</Label>
+                            <Input
+                                id="edit-cost"
+                                type="number"
+                                name="cost_per_person"
+                                value={editingSchedule.cost_per_person}
+                                onChange={handleEditingScheduleChange}
+                                min="0"
+                            />
+                        </FormGroup>
+                        <FormActions>
+                            <Button variant="outline" onClick={handleCloseEditModal}>
+                                <X size={16} /> 취소
+                            </Button>
+                            <Button variant="primary" onClick={updateSchedule}>
+                                <Save size={16} /> 저장
+                            </Button>
+                        </FormActions>
+                    </ModalContent>
+                </ModalOverlay>
+            )}
+
+            {/* 스케줄 참여자 확인 모달 */}
+            {isMembersModalOpen && selectedScheduleForMembers && (
+                <ModalOverlay onClick={handleCloseMembersModal}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
+                        <ModalHeader>
+                            <ModalTitle>{selectedScheduleForMembers.title} 참여자 목록</ModalTitle>
+                            <CloseButton onClick={handleCloseMembersModal}>닫기</CloseButton>
+                        </ModalHeader>
+                        <ScheduleMembersSection style={{ borderTop: 'none', paddingTop: '0' }}>
+                            <SectionTitle>참여 요청 ({scheduleMembers[selectedScheduleForMembers.schedule_id]?.length || 0}건)</SectionTitle>
+                            {scheduleMembers[selectedScheduleForMembers.schedule_id]?.length > 0 ? (
+                                <MemberList>
+                                    {scheduleMembers[selectedScheduleForMembers.schedule_id].map((member) => (
+                                        <MemberItem
+                                            key={member.req_user_id}
+                                            onClick={(e) => handleMemberClickForProfile(e, selectedScheduleForMembers.schedule_id, member.req_user_id, member.req_status)}
+                                        >
+                                            <MemberInfo>
+                                                <MemberName>{member.user_name} ({member.req_user_id})</MemberName>
+                                                <MemberStatus status={member.req_status}>
+                                                    {member.req_status === 0 && '대기중❕'}
+                                                    {member.req_status === 1 && '수락됨✅'}
+                                                    {member.req_status === 2 && '거절됨❌'}
+                                                </MemberStatus>
+                                            </MemberInfo>
+                                        </MemberItem>
+                                    ))}
+                                </MemberList>
+                            ) : (
+                                <p>아직 참여 요청이 없습니다.</p>
+                            )}
+                        </ScheduleMembersSection>
+                        <ProfileActions>
+                            <ActionButton type="close" onClick={handleCloseMembersModal}>
+                                닫기
+                            </ActionButton>
+                        </ProfileActions>
+                    </ModalContent>
+                </ModalOverlay>
+            )}
+
+            {/* 프로필 모달 (가장 높은 z-index) */}
+            {isProfileModalOpen && selectedMemberProfile && (
+                <ModalOverlayProfile onClick={handleCloseProfileModal}>
+                    <ModalContent onClick={(e) => e.stopPropagation()}>
+                        <ModalHeader>
+                            <ModalTitle>{selectedMemberProfile.user_id}님의 프로필</ModalTitle>
+                            <CloseButton onClick={handleCloseProfileModal}>닫기</CloseButton>
+                        </ModalHeader>
+                        <ProfileImageContainer>
+                            {selectedMemberProfile.profile_image_url ? (
+                                <ProfileImage src={selectedMemberProfile.profile_image_url} alt="프로필 이미지" />
+                            ) : (
+                                <ProfileImage src="/default-profile.png" alt="기본 프로필 이미지" />
+                            )}
+                        </ProfileImageContainer>
+                        <div>
+                            <ProfileDetail><strong>닉네임:</strong> {selectedMemberProfile.nickname}</ProfileDetail>
+                            <ProfileDetail><strong>성별:</strong> {selectedMemberProfile.gender}</ProfileDetail>
+                            <ProfileDetail><strong>생년월일:</strong> {new Date(selectedMemberProfile.birth_date).toLocaleDateString('ko-KR')}</ProfileDetail>
+                            <ProfileDetail><strong>휴대폰:</strong> {selectedMemberProfile.phone_number}</ProfileDetail>
+                            <ProfileDetail><strong>mbti:</strong> {selectedMemberProfile.mbti}</ProfileDetail>
+                            <ProfileDetail><strong>자기소개:</strong> {selectedMemberProfile.introduce || '없음'}</ProfileDetail>
+                        </div>
+                        <ProfileActions>
+                            {currentMemberStatusForModal === 0 && (
+                                <>
+                                    <ActionButton type="accept" onClick={() => handleAcceptReject('accept')}>
+                                        수락
+                                    </ActionButton>
+                                    <ActionButton type="reject" onClick={() => handleAcceptReject('reject')}>
+                                        거절
+                                    </ActionButton>
+                                </>
+                            )}
+                            <ActionButton type="close" onClick={handleCloseProfileModal}>
+                                닫기
+                            </ActionButton>
+                        </ProfileActions>
+                    </ModalContent>
+                </ModalOverlayProfile>
+            )}
+        </PageContainer>
+    );
 }

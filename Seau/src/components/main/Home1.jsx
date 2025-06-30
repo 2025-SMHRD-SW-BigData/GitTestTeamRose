@@ -145,9 +145,36 @@ const Home = () => {
         <div className="panelContent" style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
           {selectedLocation && <Weather lat={selectedLocation.lat} lon={selectedLocation.lng} />}
 
-          <div className="tabButtons">
-            <button onClick={() => setRightTab('info')} className={rightTab === 'info' ? 'activeTab' : ''}>상세 정보</button>
-            <button onClick={() => setRightTab('media')} className={rightTab === 'media' ? 'activeTab' : ''}>주변 지역</button>
+          {/* 탭 버튼 */}
+          <div className="tabButtons" style={{ display: 'flex', borderBottom: '1px solid #ccc', margin: '10px 0' }}>
+            <button
+              onClick={() => setRightTab('info')}
+              style={{
+                flex: 1,
+                padding: 8,
+                background: rightTab === 'info' ? '#eee' : 'transparent',
+                border: 'none',
+                borderBottom: rightTab === 'info' ? '2px solid #333' : 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              상세 정보
+            </button>
+            <button
+              onClick={() => setRightTab('media')}
+              style={{
+                flex: 1,
+                padding: 8,
+                background: rightTab === 'media' ? '#eee' : 'transparent',
+                border: 'none',
+                borderBottom: rightTab === 'media' ? '2px solid #333' : 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              주변 지역
+            </button>
           </div>
 
           {rightTab === 'info' && (
@@ -159,7 +186,7 @@ const Home = () => {
               )}
 
               {selectedPlace && !selectedPlace.title && (
-                <div className="panelContent">
+                <div className="panelContent" style={{padding: '0px'}}>
                   <div className={selectedPlace.busy ? busyColor[selectedPlace.busy] : 'item'}>
                     <div className="itemName">{selectedPlace.name}</div>
                     <div className="itemInfo2">
