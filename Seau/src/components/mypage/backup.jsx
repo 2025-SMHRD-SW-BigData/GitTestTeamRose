@@ -3,7 +3,7 @@ import styled from '@emotion/styled';
 import axios from 'axios';
 import { UserContext } from '../../context/UserContext'; // UserContext 경로 확인
 
-// ... (이전과 동일한 스타일 컴포넌트들) ...
+// 재사용할 스타일 컴포넌트들 (ProfileManagement.jsx와 유사하게)
 const Card = styled.div`
     background-color: white;
     border-radius: 12px;
@@ -265,38 +265,6 @@ const ActionButton = styled.button`
             background-color: #4b5563;
         }
     `}
-    ${props => props.type === 'edit' && `
-        background-color: #3b82f6; /* 파란색 계열 */
-        color: white;
-        border: 1px solid #2563eb;
-        &:hover {
-            background-color: #2563eb;
-        }
-    `}
-    ${props => props.type === 'delete' && `
-        background-color: #ef4444; /* 빨간색 계열 */
-        color: white;
-        border: 1px solid #dc2626;
-        &:hover {
-            background-color: #dc2626;
-        }
-    `}
-    ${props => props.type === 'save' && `
-        background-color: #10b981; /* 녹색 계열 */
-        color: white;
-        border: 1px solid #059669;
-        &:hover {
-            background-color: #059669;
-        }
-    `}
-    ${props => props.type === 'cancel' && `
-        background-color: #9ca3af; /* 회색 계열 */
-        color: white;
-        border: 1px solid #6b7280;
-        &:hover {
-            background-color: #6b7280;
-        }
-    `}
 `;
 
 const ActionButtonSmall = styled.button`
@@ -407,12 +375,6 @@ const ProfileImage = styled.img`
     object-fit: cover; /* 이미지가 컨테이너에 꽉 차도록 */
 `;
 
-const FormRow = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 10px;
-`;
-
 
 export default function ScheduleManagement() {
   const { userId, userData, placeData } = useContext(UserContext);
@@ -440,13 +402,14 @@ export default function ScheduleManagement() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [currentScheduleIdForModal, setCurrentScheduleIdForModal] = useState(null);
   const [currentMemberStatusForModal, setCurrentMemberStatusForModal] = useState(null);
+  // 현재 모달이 열린 스케줄의 생성자 ID를 저장합니다.
   const [currentModalScheduleCreatorId, setCurrentModalScheduleCreatorId] = useState(null);
 
+  // 스케줄 상세/멤버 모달 상태
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedScheduleForDetail, setSelectedScheduleForDetail] = useState(null);
-  const [isEditingSchedule, setIsEditingSchedule] = useState(false);
-  const [editableScheduleData, setEditableScheduleData] = useState(null);
 
+  // 참여자 확인 모달 상태
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [selectedScheduleForMembers, setSelectedScheduleForMembers] = useState(null);
 
@@ -578,118 +541,41 @@ export default function ScheduleManagement() {
     }
   };
 
+  // 스케줄 상세 정보 모달 열기
   const handleOpenDetailModal = (schedule) => {
     setSelectedScheduleForDetail(schedule);
-    setEditableScheduleData({
-      ...schedule,
-      scheduled_date: schedule.scheduled_date ? new Date(schedule.scheduled_date).toISOString().split('T')[0] : '',
-    });
     setIsDetailModalOpen(true);
-    setIsEditingSchedule(false);
   };
 
+  // 스케줄 상세 정보 모달 닫기
   const handleCloseDetailModal = () => {
     setIsDetailModalOpen(false);
     setSelectedScheduleForDetail(null);
-    setIsEditingSchedule(false);
-    setEditableScheduleData(null);
-  };
-
-  const handleEditClick = () => {
-    setIsEditingSchedule(true);
-  };
-
-  const handleEditableInputChange = (e) => {
-    const { name, value } = e.target;
-    setEditableScheduleData(prev => ({ ...prev, [name]: value }));
-  };
-
-  // 스케줄 수정 저장 (axios.post 사용)
-  const handleUpdateSchedule = async () => {
-    if (!editableScheduleData || !userId) return;
-
-    try {
-      const dataToSend = {
-        userId: userId, // 현재 로그인한 사용자 ID
-        scheduleId: editableScheduleData.schedule_id, // 업데이트할 스케줄 ID
-        title: editableScheduleData.title,
-        description: editableScheduleData.description,
-        location_name: editableScheduleData.location_name,
-        address: editableScheduleData.address,
-        scheduled_date: editableScheduleData.scheduled_date,
-        max_participants: parseInt(editableScheduleData.max_participants, 10),
-        cost_per_person: parseInt(editableScheduleData.cost_per_person, 10),
-        user_type: userData?.user_type,
-        _method: 'PUT' // 백엔드에서 POST 요청을 PUT으로 해석하도록 돕는 필드 (선택 사항)
-      };
-
-      // axios.post로 변경
-      const response = await axios.post(`http://localhost:3001/updateSchedule`, dataToSend);
-
-      if (response.data.success) {
-        showMessage('스케쥴이 성공적으로 업데이트되었습니다!', 'success');
-        setIsEditingSchedule(false);
-        handleCloseDetailModal();
-        fetchMySchedules();
-      } else {
-        showMessage(`스케쥴 업데이트 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 업데이트 중 오류 발생:', err);
-      showMessage('스케쥴 업데이트 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    }
-  };
-
-  // 스케줄 삭제 (axios.post 사용)
-  const handleDeleteSchedule = async () => {
-    if (!selectedScheduleForDetail || !userId) return;
-
-    if (!window.confirm('정말로 이 스케쥴을 삭제하시겠습니까?')) {
-      return;
-    }
-
-    try {
-      const dataToSend = {
-        userId: userId, // 현재 로그인한 사용자 ID
-        scheduleId: selectedScheduleForDetail.schedule_id, // 삭제할 스케줄 ID
-        _method: 'DELETE' // 백엔드에서 POST 요청을 DELETE로 해석하도록 돕는 필드 (선택 사항)
-      };
-
-      // axios.post로 변경
-      const response = await axios.post(`http://localhost:3001/deleteSchedule`, dataToSend);
-
-      if (response.data.success) {
-        showMessage('스케쥴이 성공적으로 삭제되었습니다!', 'success');
-        handleCloseDetailModal();
-        fetchMySchedules();
-      } else {
-        showMessage(`스케쥴 삭제 실패: ${response.data.message || '알 수 없는 오류'}`, 'error');
-      }
-    } catch (err) {
-      console.error('스케쥴 삭제 중 오류 발생:', err);
-      showMessage('스케쥴 삭제 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
-    }
   };
 
 
+  // 스케줄 멤버 모달 열기
   const handleOpenMembersModal = async (scheduleId, creatorId) => {
     const schedule = mySchedules.find(s => s.schedule_id === scheduleId);
     setSelectedScheduleForMembers(schedule);
     setCurrentModalScheduleCreatorId(creatorId);
-    await fetchScheduleMembers(scheduleId);
+    await fetchScheduleMembers(scheduleId); // 멤버 목록을 새로 불러옵니다.
     setIsMembersModalOpen(true);
   };
 
+  // 스케줄 멤버 모달 닫기
   const handleCloseMembersModal = () => {
     setIsMembersModalOpen(false);
     setSelectedScheduleForMembers(null);
   };
 
+  // 멤버 항목 클릭 시 프로필 모달 열기
   const handleMemberClickForProfile = async (e, scheduleId, memberId, memberStatus) => {
-    e.stopPropagation();
+    e.stopPropagation(); // 이벤트 버블링 방지
     setCurrentScheduleIdForModal(scheduleId);
     setCurrentMemberStatusForModal(memberStatus);
 
+    // 해당 스케줄의 creator_id를 찾아서 저장 (모달 내 버튼 활성화를 위해)
     const selectedSchedule = mySchedules.find(s => s.schedule_id === scheduleId);
     if (selectedSchedule) {
       setCurrentModalScheduleCreatorId(selectedSchedule.creator_id);
@@ -704,28 +590,27 @@ export default function ScheduleManagement() {
     setSelectedMemberProfile(null);
     setCurrentScheduleIdForModal(null);
     setCurrentMemberStatusForModal(null);
-    setCurrentModalScheduleCreatorId(null);
+    setCurrentModalScheduleCreatorId(null); // 초기화
+    fetchMySchedules(); // 스케줄 상태 변경 후 목록 새로고침
   };
 
   const handleAcceptReject = async (action) => {
     if (!selectedMemberProfile || !currentScheduleIdForModal) return;
 
     const scheduleId = currentScheduleIdForModal;
-    // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
-    const requestedUserId = selectedMemberProfile.user_id;
+    const requestedUserId = selectedMemberProfile.user_id; // users 테이블의 user_id
 
     try {
       const endpoint = action === 'accept' ? 'accept' : 'reject';
       const response = await axios.post(`http://localhost:3001/schedule/${endpoint}`, {
-        scheduleId: scheduleId,
-        reqUserId: requestedUserId,
+        scheduleId: scheduleId, // Node.js 백엔드와 필드 이름 일치
+        reqUserId: requestedUserId, // Node.js 백엔드와 필드 이름 일치
       });
 
       if (response.data.success) {
         showMessage(`요청이 성공적으로 ${action === 'accept' ? '수락' : '거절'}되었습니다.`, 'success');
-        handleCloseProfileModal();
-        fetchScheduleMembers(scheduleId);
-        fetchMySchedules();
+        handleCloseProfileModal(); // 프로필 모달 닫기
+        fetchScheduleMembers(scheduleId); // 참여자 목록 새로고침
       } else {
         showMessage(response.data.message || `요청 ${action === 'accept' ? '수락' : '거절'}에 실패했습니다.`, 'error');
       }
@@ -889,130 +774,29 @@ export default function ScheduleManagement() {
         <ModalOverlay onClick={handleCloseDetailModal}>
           <ModalContent onClick={(e) => e.stopPropagation()}>
             <ModalHeader>
-              <ModalTitle>{isEditingSchedule ? '스케쥴 수정' : '스케쥴 상세 정보'}</ModalTitle>
+              <ModalTitle>{selectedScheduleForDetail.title} 상세 정보</ModalTitle>
               <CloseButton onClick={handleCloseDetailModal}>닫기</CloseButton>
             </ModalHeader>
             <div>
-              <FormRow>
-                <Label htmlFor="title_detail">제목</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="title_detail"
-                    name="title"
-                    value={editableScheduleData?.title || ''}
-                    onChange={handleEditableInputChange}
-                  />
-                ) : (
-                  <ProfileDetail><strong>{selectedScheduleForDetail.title}</strong></ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="description_detail">설명</Label>
-                {isEditingSchedule ? (
-                  <TextArea
-                    id="description_detail"
-                    name="description"
-                    value={editableScheduleData?.description || ''}
-                    onChange={handleEditableInputChange}
-                    rows="3"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.description || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="scheduleDate_detail">날짜</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="date"
-                    id="scheduleDate_detail"
-                    name="scheduled_date"
-                    value={editableScheduleData?.scheduled_date || ''}
-                    onChange={handleEditableInputChange}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.scheduled_date ? new Date(selectedScheduleForDetail.scheduled_date).toLocaleDateString('ko-KR') : '날짜 없음'}</ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="location_name_detail">장소명</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="location_name_detail"
-                    name="location_name"
-                    value={editableScheduleData?.location_name || ''}
-                    onChange={handleEditableInputChange}
-                    readOnly={userData?.user_type === 1}
-                    style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.location_name || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="address_detail">주소</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    id="address_detail"
-                    name="address"
-                    value={editableScheduleData?.address || ''}
-                    onChange={handleEditableInputChange}
-                    readOnly={userData?.user_type === 1}
-                    style={userData?.user_type === 1 ? { backgroundColor: '#e9ecef', cursor: 'not-allowed' } : {}}
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.address || '없음'}</ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="maxParticipants_detail">최대 참여 인원</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="number"
-                    id="maxParticipants_detail"
-                    name="max_participants"
-                    value={editableScheduleData?.max_participants || ''}
-                    onChange={handleEditableInputChange}
-                    min="1"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.checked_people} / {selectedScheduleForDetail.max_participants}명</ProfileDetail>
-                )}
-              </FormRow>
-
-              <FormRow>
-                <Label htmlFor="costPerPerson_detail">1인당 비용</Label>
-                {isEditingSchedule ? (
-                  <Input
-                    type="number"
-                    id="costPerPerson_detail"
-                    name="cost_per_person"
-                    value={editableScheduleData?.cost_per_person || ''}
-                    onChange={handleEditableInputChange}
-                    min="0"
-                  />
-                ) : (
-                  <ProfileDetail>{selectedScheduleForDetail.cost_per_person?.toLocaleString()}원</ProfileDetail>
-                )}
-              </FormRow>
+              <ProfileDetail><strong>설명:</strong> {selectedScheduleForDetail.description}</ProfileDetail>
+              {selectedScheduleForDetail.location_name && <ProfileDetail><strong>장소명:</strong> {selectedScheduleForDetail.location_name}</ProfileDetail>}
+              <ProfileDetail><strong>주소:</strong> {selectedScheduleForDetail.address}</ProfileDetail>
+              {selectedScheduleForDetail.latitude && selectedScheduleForDetail.longitude && (
+                <ProfileDetail>
+                  <strong>위도:</strong> {selectedScheduleForDetail.latitude}, <strong>경도:</strong> {selectedScheduleForDetail.longitude}
+                </ProfileDetail>
+              )}
+              {selectedScheduleForDetail.scheduled_date && (
+                <ProfileDetail>
+                  <strong>날짜:</strong> {new Date(selectedScheduleForDetail.scheduled_date).toLocaleDateString('ko-KR')}
+                </ProfileDetail>
+              )}
+              <ProfileDetail>
+                <strong>참여 인원:</strong> {selectedScheduleForDetail.checked_people} / {selectedScheduleForDetail.max_participants}명
+              </ProfileDetail>
+              <ProfileDetail><strong>1인당 비용:</strong> {selectedScheduleForDetail.cost_per_person.toLocaleString()}원</ProfileDetail>
             </div>
             <ProfileActions>
-              {isEditingSchedule ? (
-                <>
-                  <ActionButton type="save" onClick={handleUpdateSchedule}>저장</ActionButton>
-                  <ActionButton type="cancel" onClick={() => setIsEditingSchedule(false)}>취소</ActionButton>
-                </>
-              ) : (
-                <>
-                  <ActionButton type="edit" onClick={handleEditClick}>수정</ActionButton>
-                  <ActionButton type="delete" onClick={handleDeleteSchedule}>삭제</ActionButton>
-                </>
-              )}
               <ActionButton type="close" onClick={handleCloseDetailModal}>
                 닫기
               </ActionButton>
@@ -1070,11 +854,12 @@ export default function ScheduleManagement() {
               <ModalTitle>{selectedMemberProfile.user_id}님의 프로필</ModalTitle>
               <CloseButton onClick={handleCloseProfileModal}>닫기</CloseButton>
             </ModalHeader>
+            {/* 프로필 이미지 추가 */}
             <ProfileImageContainer>
               {selectedMemberProfile.profile_image_url ? (
                 <ProfileImage src={selectedMemberProfile.profile_image_url} alt="프로필 이미지" />
               ) : (
-                <ProfileImage src="/default-profile.png" alt="기본 프로필 이미지" />
+                <ProfileImage src="/default-profile.png" alt="기본 프로필 이미지" /> // 기본 이미지 경로 설정 필요
               )}
             </ProfileImageContainer>
             <div>
@@ -1086,16 +871,14 @@ export default function ScheduleManagement() {
               <ProfileDetail><strong>자기소개:</strong> {selectedMemberProfile.introduce || '없음'}</ProfileDetail>
             </div>
             <ProfileActions>
-              
-                <>
-                  <ActionButton type="accept" onClick={() => handleAcceptReject('accept')}>
-                    수락
-                  </ActionButton>
-                  <ActionButton type="reject" onClick={() => handleAcceptReject('reject')}>
-                    거절
-                  </ActionButton>
-                </>
-              
+              <>
+                <ActionButton type="accept" onClick={() => handleAcceptReject('accept')}>
+                  수락
+                </ActionButton>
+                <ActionButton type="reject" onClick={() => handleAcceptReject('reject')}>
+                  거절
+                </ActionButton>
+              </>
               <ActionButton type="close" onClick={handleCloseProfileModal}>
                 닫기
               </ActionButton>
