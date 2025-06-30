@@ -1,16 +1,18 @@
 // KakaoMap.js
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { Map, MapMarker } from 'react-kakao-maps-sdk'
 import useKakaoLoader from './useKaKaoLoader'
 import axios from 'axios'
 import getDistance from './getDistance'
 
-const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, mapCenter, mapLevel }) => {
+const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, mapCenter, mapLevel, onScheduleChange, showSchedule, onMapLevelChange }) => {
     // Kakao SDK 로드 완료 여부 받기
     const isKakaoLoaded = useKakaoLoader()
     const [placeMarkerList, setPlaceMarkerList] = useState([])
     const [nearbyMarkers, setNearbyMarkers] = useState([])
     const [markerList, setMarkerList] = useState([])
+    const [scheduleList, setScheduleList] = useState([])
+    const mapRef = useRef(null)
 
     // 주소 → 위경도 변환 함수
     const geocodeAddress = (address) => {
@@ -32,6 +34,7 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
             })
         })
     }
+    console.log(scheduleList)
 
     // 서버에서 주소 목록 가져오고 마커 리스트 생성
     useEffect(() => {
@@ -94,6 +97,37 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
             } catch (err) {
                 console.error('주변 관광 정보 데이터 불러오기 실패:', err)
             }
+
+            // 스케줄 데이터 가져오기
+            try {
+                const scheduleRes = await axios.get('http://localhost:3001/schedules/get')
+                // console.log(scheduleRes.data.schedules)
+                const schedulesList = scheduleRes.data.schedules
+
+                const provideSchedules = schedulesList.map((schedule) => {
+                    if (schedule.latitude == null || schedule.longitude == null) {
+                        console.warn(`위치 정보 누락된 장소 : ${schedule.title}`)
+                        return null;
+                    }
+                    return {
+                        lat: parseFloat(schedule.latitude),
+                        lng: parseFloat(schedule.longitude),
+                        title: schedule.title,
+                        description: schedule.description,
+                        Date: schedule.scheduled_date,
+                        location: schedule.location_name,
+                        maxPeople: schedule.max_participants,
+                        perCost: schedule.cost_per_person,
+                        status: schedule.status,
+                        address: schedule.address,
+                        userId: schedule.user_id
+                    }
+                })
+                setScheduleList(provideSchedules.filter(Boolean))
+                // console.log(scheduleList)
+            } catch (err) {
+                console.error('스케줄 데이터 불러오기 실패:', err)
+            }
         }
 
 
@@ -132,7 +166,10 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
         if (onNearbyMarkersChange) {
             onNearbyMarkersChange(nearby)
         }
-    }, [selectedLocation, placeMarkerList, markerList])
+        if (onScheduleChange) {
+            onScheduleChange(scheduleList)
+        }
+    }, [selectedLocation, placeMarkerList, markerList, scheduleList])
 
     const handleMapClick = (_map, mouseEvent) => {
         const lat = mouseEvent.latLng.getLat()
@@ -141,6 +178,25 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
     }
     console.log(mapLevel)
 
+    const handleZoomChanged = () => {
+        if (!mapRef.current) return;
+        const currentLevel = mapRef.current.getLevel()
+        if (onMapLevelChange) {
+            onMapLevelChange(currentLevel)
+        }
+    }
+
+    useEffect(() => {
+        if (mapRef.current && mapCenter) {
+            const center = new window.kakao.maps.LatLng(mapCenter.lat, mapCenter.lng);
+            mapRef.current.setCenter(center);
+        }
+
+        if (mapRef.current && mapLevel !== undefined) {
+            mapRef.current.setLevel(mapLevel);
+        }
+    }, [mapCenter, mapLevel]);
+
     return (
         <Map
             key={`${mapCenter.lat}-${mapCenter.lng}-${mapLevel}`} // 위치 바뀔 때 명확히 리턴
@@ -148,6 +204,10 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
             className='map'
             level={mapLevel}
             onClick={handleMapClick}
+            onCreate={(map) => {
+                mapRef.current = map;
+            }}
+            onZoomChanged={handleZoomChanged}
         >
             {/* beach 마커 */}
             {markerList.map((marker, idx) => (
@@ -168,6 +228,18 @@ const KakaoMap = ({ selectedLocation, onLocationSelect, onNearbyMarkersChange, m
                     onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, marker.image, marker)}
                 >
                     <div style={{ color: marker.type === 'beach' ? 'black' : 'orange' }}>{marker.name}</div>
+                </MapMarker>
+            ))}
+
+            {/* 스케줄 마커 */}
+            {showSchedule && scheduleList.map((marker, idx) => (
+                <MapMarker
+                    key={idx}
+                    position={{ lat: marker.lat, lng: marker.lng }}
+                    onClick={() => onLocationSelect({ lat: marker.lat, lng: marker.lng }, null, marker)}
+                >
+                    {/* {console.log(marker.lat, marker.lng)} */}
+                    <div style={{ color: 'red' }}>{marker.title}</div>
                 </MapMarker>
             ))}
 
