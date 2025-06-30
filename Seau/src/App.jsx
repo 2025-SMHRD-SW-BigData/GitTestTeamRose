@@ -14,7 +14,7 @@ import {useNavigate} from 'react-router-dom'
 import { ProfileManagement } from './components/mypage/ProfileManagement'
 import Start from './components/Start/Start'
 import './App.css'
-import ScheduleManagement from './components/mypage/ScheduleMangement'
+import {ScheduleManagement} from './components/mypage/ScheduleMangement'
 
 
 function App() {

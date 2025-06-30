@@ -7,8 +7,8 @@ import { User, Lock, HelpCircle, Calendar } from 'lucide-react';
 import { UserContext } from '../../context/UserContext';
 import axios from 'axios';
 import {useNavigate} from 'react-router-dom'
-import ScheduleMangement from './ScheduleMangement';
 import BusinessProfileForm from './BusinessProfileForm';
+import { ScheduleManagement } from './ScheduleMangement';
 
 // Container 전체 페이지 배경과 패딩
 const Container = styled.div`
@@ -296,7 +296,7 @@ export default function MyPage() {
       case 'support':
         return <CustomerSupport />;
       case 'schedule':
-        return <ScheduleMangement />;
+        return <ScheduleManagement />;
       default:
         return <ProfileManagement />;
     }

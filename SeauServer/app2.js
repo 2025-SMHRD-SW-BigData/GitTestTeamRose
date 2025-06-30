@@ -720,6 +720,21 @@ app.post('/deleteSchedule', (req, res) => {
 
 });
 
+app.get('/schedules/get', (req, res)=>{
+    let sql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id from schedules`
+    conn.connect();
+    conn.query(sql, (err, rows)=>{
+        if (!err) {
+            res.status(200).json({
+                schedules: rows
+            });
+        } else {
+            console.error(err);
+            res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
+        }
+    })
+})
+
 // 서버 시작
 app.listen(3001, () => {
     console.log(`Node.js 서버가 http://localhost:3001 에서 실행 중입니다.`);

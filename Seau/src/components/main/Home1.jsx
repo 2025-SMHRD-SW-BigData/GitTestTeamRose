@@ -28,6 +28,15 @@ const Home1 = () => {
   const [mapCenter, setMapCenter] = useState({ lat: 33.36167, lng: 126.52917 });
   const [mapLevel, setMapLevel] = useState(9);
   const [selectedPlace, setSelectedPlace] = useState(null)
+  const [rightTab, setRightTab] = useState('info');
+  const [scheduleList, setScheduleList] = useState([])
+  const [selectedSchedule, setSelectedSchedule] = useState(null)
+  const [showSchedule, setShowSchedule] = useState(false)
+  const [expandedScheduleIdx, setExpandedScheduleIdx] = useState(null);
+
+  // 불러오는 이미지 type이 string이면 호출
+  const selectedImage = mediaData?.image?.[0];
+  const isValidImage = typeof selectedImage === 'string' && selectedImage.trim() !== '';
 
   // 위치 선택 시 데이터 로드
   const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
@@ -41,6 +50,11 @@ const Home1 = () => {
     setRightPanelOpen(true);
     // 마커 클릭인지 판단
     setIsMarkerClick(!!imageUrl)
+    if (imageUrl) {
+      setRightTab('info')
+    }
+
+    setSelectedSchedule(null)
 
     setMapCenter(location);  // 클릭한 위치로 중심 이동
     setMapLevel(imageUrl ? 3 : 9)
@@ -71,15 +85,18 @@ const Home1 = () => {
   // 이미지 클릭시 위치 저장
   const handleImageClick = (location, imageUrl, placeInfo) => {
     handleLocationSelect(location, imageUrl, placeInfo)
+    setRightTab('info')
   }
 
-  const handleCardClick = (location, imageUrl, placeInfo) => {
-    handleLocationSelect(location, imageUrl, placeInfo)
-  }
+  const handleCardClick = handleImageClick;
 
   // KakaoMap에서 근처 관광지 목록 받기
   const handleNearbyMarkersChange = (nearby) => {
     setNearbyAttractions(nearby);
+  };
+
+  const handleScheduleChange = (newScheduleList) => {
+    setScheduleList(newScheduleList);
   };
 
   // KaKaoMap에서 받은 목록 분류
@@ -101,6 +118,9 @@ const Home1 = () => {
     }
   }
 
+  console.log(scheduleList)
+  console.log(selectedSchedule)
+
   return (
     <div className='container'>
 
@@ -112,6 +132,12 @@ const Home1 = () => {
           onNearbyMarkersChange={handleNearbyMarkersChange}
           mapCenter={mapCenter}
           mapLevel={mapLevel}
+          onMapLevelChange={(newLevel) => {
+            setMapLevel(newLevel);
+          }}
+          scheduleList={scheduleList}
+          onScheduleChange={handleScheduleChange}
+          showSchedule={showSchedule}
         />
       </div>
 
@@ -126,33 +152,6 @@ const Home1 = () => {
             ×
           </button>
         </div>
-        {selectedPlace && (
-          <div className='panelContent'>
-            <div className={ selectedPlace.busy ? `${busyColor[selectedPlace.busy]}` : 'item'}>
-              <div className="itemName">{selectedPlace.name}</div>
-              {selectedLocation && (
-                <div>
-                  <div className='itemInfo2'>
-
-                    <p>{selectedPlace.description}</p>
-                    <p>{selectedPlace.operatingTime}</p>
-                    <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : ''}</p>
-                    {selectedPlace.busy && (
-                      <div className="busyStatus">
-                        현재 상태: <strong>{selectedPlace.busy}</strong>
-                      </div>
-                    )}
-                    {/* <p>{selectedPlace.busy ? `${selectedPlace.busy}` : ''}</p> */}
-                  </div>
-
-                  {/* <div className="itemInfo">
-                  거리: {getDistance(selectedLocation.lat, selectedLocation.lng, selectedPlace.lat, selectedPlace.lng).toFixed(2)} km
-                </div> */}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
 
         {loading ? (
           <div className='loading'>로딩 중...</div>
@@ -160,11 +159,11 @@ const Home1 = () => {
           <div className='panelContent'>
             {/* 관광지 */}
             <div className='section'>
-              <h4>🏛️ 관광지</h4>
+              <h3>🏛️ 관광지</h3>
               {categori.attractions.length > 0 ? (
                 categori.attractions.filter((place) => place.name !== selectedPlace?.name)
                   .map((place, idx) => (
-                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                    <div key={idx} className={place.busy ? `${busyColor[place.busy]}` : 'item'} onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
                       <div className='itemName'>{place.name}</div>
                       {/* 거리 계산 (km 단위로 소수점 2자리까지) */}
                       <div className='itemInfo'>
@@ -182,7 +181,7 @@ const Home1 = () => {
               {categori.restaurants.length > 0 ? (
                 categori.restaurants.filter((place) => place.name !== selectedPlace?.name)
                   .map((place, idx) => (
-                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                    <div key={idx} className={place.busy ? `${busyColor[place.busy]}` : 'item'} onClick={() => { handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place), console.log(place.name, place.lat, place.lng) }}>
                       <div className='itemName'>{place.name}</div>
                       <div className='itemInfo'>
                         거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
@@ -199,7 +198,7 @@ const Home1 = () => {
               {categori.activities.length > 0 ? (
                 categori.activities.filter((place) => place.name !== selectedPlace?.name)
                   .map((place, idx) => (
-                    <div key={idx} className='item' onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
+                    <div key={idx} className={place.busy ? `${busyColor[place.busy]}` : 'item'} onClick={() => handleCardClick({ lat: place.lat, lng: place.lng }, place.image, place)}>
                       <div className='itemName'>{place.name}</div>
                       <div className='itemInfo'>
                         거리: {getDistance(selectedLocation.lat, selectedLocation.lng, place.lat, place.lng).toFixed(2)} km
@@ -231,10 +230,12 @@ const Home1 = () => {
           </button>
         </div>
 
+
+
         {loading ? (
           <div className='loading'>로딩 중...</div>
         ) : (
-          <div className='panelContent'>
+          <div className='panelContent' style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
             {/* 날씨 정보 */}
             {selectedLocation && (
               <div className='weatherSection'>
@@ -243,14 +244,45 @@ const Home1 = () => {
               </div>
             )}
 
-            {/* 미디어 정보 */}
-            {(nearbyAttractions.length > 0 || mediaData) && (
-              <div className='mediaSection'>
-                <h4>📸 관련 미디어</h4>
+            {/* 탭 버튼 */}
+            <div className="tabButtons" style={{ display: 'flex', borderBottom: '1px solid #ccc', margin: '10px 0' }}>
+              <button
+                onClick={() => setRightTab('info')}
+                style={{
+                  flex: 1,
+                  padding: 8,
+                  background: rightTab === 'info' ? '#eee' : 'transparent',
+                  border: 'none',
+                  borderBottom: rightTab === 'info' ? '2px solid #333' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                상세 정보
+              </button>
+              <button
+                onClick={() => setRightTab('media')}
+                style={{
+                  flex: 1,
+                  padding: 8,
+                  background: rightTab === 'media' ? '#eee' : 'transparent',
+                  border: 'none',
+                  borderBottom: rightTab === 'media' ? '2px solid #333' : 'none',
+                  cursor: 'pointer',
+                  fontWeight: 'bold'
+                }}
+              >
+                주변 지역
+              </button>
+            </div>
 
+            {/* 상세 정보 */}
+            {rightTab == 'info' && (
+              <>
+                {/* 선택한 마커 이미지 */}
                 <div className='selectedImageContainer'>
                   {/* 선택된 마커 이미지 (클릭했을 경우만) */}
-                  {mediaData?.image?.[0] && (
+                  {isValidImage && (
                     <img
                       src={mediaData.image[0]}
                       alt="선택된 마커 이미지"
@@ -260,47 +292,129 @@ const Home1 = () => {
                   )}
                 </div>
 
-                <div className='imageGrid'>
-                  {/* 중복 제거: 마커 이미지와 겹치지 않는 nearby 이미지만 표시 */}
-                  {[...new Map(
-                    nearbyAttractions
-                      .filter(place =>
-                        place.image &&
-                        (!isMarkerClick || place.image !== mediaData?.image?.[0])
-                      )
-                      .map(place => [place.image, place])
-                  ).values()].map((place, idx) => (
-                    <img
-                      key={idx}
-                      src={place.image}
-                      alt={`근처 장소 이미지 ${idx + 1}`}
-                      className='mediaImage'
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => handleImageClick({ lat: place.lat, lng: place.lng }, place.image, place)}
-                    />
-                  ))}
-                </div>
 
-                <h5>🎬 관련 영상</h5>
-                <div className='videoList'>
-                  {mediaData?.videos?.map((video, index) => (
-                    <div key={index} className='videoItem'>
-                      <img
-                        src={video.thumbnail}
-                        alt={video.title}
-                        className='videoThumbnail'
-                      />
-                      <div className='videoTitle'>{video.title}</div>
+                {selectedPlace && !selectedPlace.title && (
+                  // ✅ 일반 장소(관광지/맛집/레저) 선택 시 표시
+                  <div className='panelContent' style={{ padding: '0px' }}>
+                    <div className={selectedPlace.busy ? `${busyColor[selectedPlace.busy]}` : 'item'}>
+                      <div className="itemName">{selectedPlace.name}</div>
+                      <div className='itemInfo2'>
+                        <p>{selectedPlace.description}</p>
+                        <p>{selectedPlace.operatingTime}</p>
+                        <p>{selectedPlace.phone ? `연락처 : ${selectedPlace.phone}` : ''}</p>
+                        {selectedPlace.busy && (
+                          <div className="busyStatus">
+                            현재 상태: <strong>{selectedPlace.busy}</strong>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
+                )}
+                {/* 선택한 스케줄 상세 정보 */}
+                {showSchedule && (
+                  // ✅ showSchedule이 true이면 전체 스케줄 리스트 출력
+                  scheduleList.map((schedule, idx) => (
+                    <div key={idx} className='panelContent' style={{ padding: '0px' }}>
+                      <div
+                        className='item'
+                        onClick={() => {
+                          // 토글 기능 : 같은 idx면 접고, 아니면 열기
+                          setExpandedScheduleIdx(prev => (prev === idx ? null : idx))
+                          // 확대 시 이동
+                          if (expandedScheduleIdx !== idx) {
+                            handleCardClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule), setMapLevel(3)
+                          }
+                        }} style={{ cursor: 'pointer' }}>
+                        <div className="itemName">{schedule.title}</div>
+                        {expandedScheduleIdx === idx && (
+
+                          <div className='itemInfo2'>
+                            <p>{schedule.description}</p>
+                            <p>날짜: {schedule.Date}</p>
+                            <p>장소: {schedule.location}</p>
+                            <p>인원: {schedule.maxPeople}명</p>
+                            <p>1인당 비용: {schedule.perCost}원</p>
+                            <p>상태: {schedule.status}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+                {/* 아무 정보가 없을 때 */}
+                {!selectedPlace && !showSchedule &&
+                  <div>선택된 정보가 없습니다.</div>
+                }
+
+              </>
+            )}
+
+            {/* 미디어 정보 */}
+            {rightTab === 'media' && (
+              <>
+                {(nearbyAttractions.length > 0 || isValidImage) && (
+                  <div className='mediaSection'>
+
+                    <div className='imageGrid'>
+                      {/* 중복 제거: 마커 이미지와 겹치지 않는 nearby 이미지만 표시 */}
+                      {[...new Map(
+                        nearbyAttractions
+                          .filter(place =>
+                            place.image &&
+                            (!isMarkerClick || place.image !== mediaData?.image?.[0])
+                          )
+                          .map(place => [place.image, place])
+                      ).values()].map((place, idx) => (
+                        <img
+                          key={idx}
+                          src={place.image}
+                          alt={`근처 장소 이미지 ${idx + 1}`}
+                          className='mediaImage'
+                          style={{ cursor: 'pointer' }}
+                          onClick={() => handleImageClick({ lat: place.lat, lng: place.lng }, place.image, place)}
+                        />
+                      ))}
+                    </div>
+
+                  </div>
+                )}
+              </>
             )}
           </div>
+
         )}
       </div>
 
+      {/* 스케줄 버튼 */}
+      <div style={{
+        position: 'fixed',
+        bottom: '20px',
+        left: '50%',
+        transform: 'translateX(-50%)',
+        zIndex: 1000,
+      }}>
+        <button
+          onClick={() => setShowSchedule(prev => {
+            const newShowSchedule = !prev
+            if (newShowSchedule) {
+              setMapLevel(10);
+              setMapCenter({ lat: 33.36167, lng: 126.52917 })
+            }
+            return newShowSchedule;
+          })}
+          style={{
+            padding: '10px 20px',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+        >
+          {showSchedule ? '스케줄 마커 숨기기' : '스케줄 마커 보기'}
+        </button>
+      </div>
+
     </div>
+
 
 
   )
