@@ -308,3 +308,11 @@
   font-size: 14px;
   flex: 1;
 }
+
+.scheduleButton {
+  position: fixed;       /* 화면 고정 */
+  bottom: 20px;          /* 하단에서 20px 위 */
+  left: 50%;             /* 가로 중앙 정렬 시작점 */
+  transform: translateX(-50%); /* 정확한 가운데로 이동 */
+  z-index: 1000;         /* 다른 요소 위에 표시되게 */
+}
