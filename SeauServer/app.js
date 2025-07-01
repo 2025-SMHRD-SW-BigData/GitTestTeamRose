@@ -1,10 +1,10 @@
 const express = require('express');
 const app = express();
-const mysql = require('mysql2'); // mysql2/promise가 아닌 mysql2 사용 확인
+const mysql = require('mysql2');
 const path = require('path');
-const fetch = require('node-fetch'); // API 호출을 위해 사용
-const https = require('https'); // 이 모듈은 현재 코드에서 직접적으로 사용되지 않지만, 기존 코드에 있었기에 유지합니다.
-const iconv = require('iconv-lite'); // 현재 코드에서 직접적으로 사용되지 않지만, 기존 코드에 있었기에 유지합니다.
+const fetch = require('node-fetch');
+const https = require('https');
+const iconv = require('iconv-lite');
 const KAKAO_REST_API_KEY = '30382bad8e7221eb3b4c8f89fcd78114';
 
 
@@ -616,6 +616,32 @@ app.post('/schedule/reject', (req, res) => {
             res.json({ success: true, message: '스케줄 참여 신청이 거절되었습니다.' });
         } else {
             res.status(404).json({ success: false, message: '해당하는 스케줄 멤버 신청을 찾을 수 없습니다.' });
+        }
+    });
+});
+
+// 새로 추가: 스케줄 신청 취소 (schedule_member 삭제)
+app.post('/schedule/cancel_apply', (req, res) => {
+    console.log('스케줄 신청 취소 요청');
+    const { scheduleId, userId } = req.body; // userId는 신청을 취소하는 사용자 ID
+
+    if (!scheduleId || !userId) {
+        return res.status(400).json({ success: false, message: 'scheduleId와 userId가 필요합니다.' });
+    }
+
+    const sql = `DELETE FROM schedule_member WHERE schedule_id = ? AND req_user_id = ?`;
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [scheduleId, userId], (err, result) => {
+        if (err) {
+            console.error('스케줄 신청 취소 처리 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 신청 취소 실패' });
+        }
+
+        if (result.affectedRows > 0) {
+            res.json({ success: true, message: '스케줄 신청이 성공적으로 취소되었습니다.' });
+        } else {
+            res.status(404).json({ success: false, message: '해당하는 스케줄 신청을 찾을 수 없거나 이미 취소되었습니다.' });
         }
     });
 });
