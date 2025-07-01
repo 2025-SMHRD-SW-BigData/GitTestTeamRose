@@ -293,7 +293,7 @@ const Input = styled.input`
     }
 `;
 
-const TextArea = styled.textarea`
+const Textarea = styled.textarea`
     width: 94%; /* 부모 요소에 맞게 조정 */
     padding: 12px;
     border: 1px solid #d1d5db;

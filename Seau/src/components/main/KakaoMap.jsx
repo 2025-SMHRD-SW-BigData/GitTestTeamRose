@@ -12,6 +12,7 @@ const KakaoMap = ({
     mapLevel,
     onMapLevelChange,
     onScheduleChange,
+    onScheduleMemberChange,
     showSchedule,
     onNearestBeachChange
 }) => {
@@ -20,6 +21,7 @@ const KakaoMap = ({
     const [nearbyMarkers, setNearbyMarkers] = useState([]);
     const [markerList, setMarkerList] = useState([]);
     const [scheduleList, setScheduleList] = useState([]);
+    const [scheduleMemberList, setScheduleMemberList] = useState([])
     const mapRef = useRef(null);
 
     useEffect(() => {
@@ -30,7 +32,7 @@ const KakaoMap = ({
                 const [beachRes, tourRes, scheduleRes] = await Promise.all([
                     axios.get('http://localhost:3001/place/beach'),
                     axios.get('http://localhost:3001/place/tour'),
-                    axios.get('http://localhost:3001/schedules/get')
+                    axios.get('http://localhost:3001/schedules/get'),
                 ]);
 
                 const beaches = await Promise.all(beachRes.data.beach.map(async (b) => {
@@ -68,18 +70,24 @@ const KakaoMap = ({
                         lng: parseFloat(s.longitude),
                         title: s.title,
                         description: s.description,
-                        Date: s.scheduled_date,
+                        Date: new Date(s.scheduled_date).toLocaleDateString('ko-KR'),
                         location: s.location_name,
                         maxPeople: s.max_participants,
                         perCost: s.cost_per_person,
                         status: s.status,
                         address: s.address,
-                        userId: s.user_id
+                        userId: s.user_id,
+                        scheduleImage: s.schedule_image_url,
+                        scheduleId: s.schedule_id,
                     }));
+
+                const scheduleMembers = scheduleRes.data.members
+                console.log(scheduleMembers)
 
                 setMarkerList(beaches.filter(Boolean));
                 setPlaceMarkerList(tours);
                 setScheduleList(schedules);
+                setScheduleMemberList(scheduleMembers)
             } catch (err) {
                 console.error(err);
             }
@@ -98,6 +106,7 @@ const KakaoMap = ({
         setNearbyMarkers(nearby);
         onNearbyMarkersChange?.(nearby);
         onScheduleChange?.(scheduleList);
+        onScheduleMemberChange?.(scheduleMemberList)
 
         // 가장 가까운 해변
         let minDist = Infinity;

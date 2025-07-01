@@ -29,6 +29,7 @@ const Home = () => {
   const [selectedPlace, setSelectedPlace] = useState(null)
   const [rightTab, setRightTab] = useState('info')
   const [scheduleList, setScheduleList] = useState([])
+  const [scheduleMemberList, setScheduleMemberList] = useState([])
   const [expandedScheduleIdx, setExpandedScheduleIdx] = useState(null)
   const [nearbyAttractions, setNearbyAttractions] = useState([])
   const [nearestBeachName, setNearestBeachName] = useState(null)
@@ -63,6 +64,46 @@ const Home = () => {
     setScheduleList(schedules)
   }
 
+  const handleScheduleMemberChange = (scheduleMembers) => {
+    setScheduleMemberList(scheduleMembers)
+  }
+
+  const handleApply = async (scheduleId) => {
+    try {
+      // 여기서 user_id는 로그인한 사용자 id를 의미합니다.
+      // 만약 상태관리(예: Context, Redux)나 props에서 받아온다면 그 값을 사용하세요.
+
+      const response = await fetch('http://localhost:3001/schedule/apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          schedule_id: scheduleId,
+          user_id: userId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('신청 성공!');
+        // 신청 후 상태 갱신
+        setScheduleMemberList(prev => [
+          ...prev,
+          {
+            schedule_id: scheduleId,
+            req_user_id: userId,
+            req_status: 0  // 대기 상태로 추가 (클라이언트에서는 중요 X)
+          }
+        ]);
+      } else {
+        alert('신청 실패: ' + data.message);
+      }
+    } catch (err) {
+      console.error('신청 중 오류:', err);
+      alert('신청 중 오류가 발생했습니다.');
+    }
+  };
+
   const handleLogButton = () => {
     if (isOauth) {
       setIsOauth(false)
@@ -85,6 +126,8 @@ const Home = () => {
       </div>
     ))
 
+  console.log(scheduleMemberList)
+
   return (
     <div className="container">
       {/* 지도 */}
@@ -98,6 +141,7 @@ const Home = () => {
           onMapLevelChange={setMapLevel}
           scheduleList={scheduleList}
           onScheduleChange={handleScheduleChange}
+          onScheduleMemberChange={handleScheduleMemberChange}
           showSchedule={showSchedule}
           onNearestBeachChange={(beach) => setNearestBeachName(beach?.name || null)}
         />
@@ -186,7 +230,7 @@ const Home = () => {
               )}
 
               {selectedPlace && !selectedPlace.title && (
-                <div className="panelContent" style={{padding: '0px'}}>
+                <div className="panelContent" style={{ padding: '0px' }}>
                   <div className={selectedPlace.busy ? busyColor[selectedPlace.busy] : 'item'}>
                     <div className="itemName">{selectedPlace.name}</div>
                     <div className="itemInfo2">
@@ -202,27 +246,54 @@ const Home = () => {
               {showSchedule && (
                 <>
                   <h3 style={{ margin: '10px' }}>📅 일정 리스트</h3>
-                  {scheduleList.map((schedule, idx) => (
-                    <div key={idx} className="item" onClick={() => {
-                      setExpandedScheduleIdx(prev => prev === idx ? null : idx)
-                      if (expandedScheduleIdx !== idx) {
-                        handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule)
-                        setMapLevel(3)
-                      }
-                    }}>
-                      <div className="itemName">{schedule.title}</div>
-                      {expandedScheduleIdx === idx && (
-                        <div className="itemInfo2">
-                          <p>{schedule.description}</p>
-                          <p>날짜: {schedule.Date}</p>
-                          <p>장소: {schedule.location}</p>
-                          <p>인원: {schedule.maxPeople}명</p>
-                          <p>비용: {schedule.perCost}원</p>
-                          <p>상태: {schedule.status}</p>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                  {scheduleList.map((schedule, idx) => {
+                    const approvCount = scheduleMemberList.filter(
+                      (m) => m.schedule_id === schedule.scheduleId && m.req_status === 1
+                    ).length
+
+                    const isApplied = scheduleMemberList.some(
+                      (m) => m.schedule_id === schedule.scheduleId && m.req_user_id === userId
+                    )
+
+                    return (
+                      <div key={idx} className="item" onClick={() => {
+                        setExpandedScheduleIdx(prev => prev === idx ? null : idx)
+                        if (expandedScheduleIdx !== idx) {
+                          handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule)
+                          setMapLevel(3)
+                        }
+                      }}>
+                        <div className="itemName" style={{ flexGrow: 1 }}>{schedule.title} {approvCount}/{schedule.maxPeople}</div>
+                        {expandedScheduleIdx === idx && (
+                          <div className="itemInfo2">
+                            <p>{schedule.description}</p>
+                            <p>날짜: {schedule.Date.toLocaleString('ko-KR')}</p>
+                            <p>장소: {schedule.location}</p>
+                            <p>인원: {schedule.maxPeople}명</p>
+                            <p>비용: {schedule.perCost}원</p>
+                            <p>상태: {schedule.status}</p>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!isApplied) handleApply(schedule.scheduleId)
+                              }}
+                              disabled={isApplied}
+                              style={{
+                                marginLeft: '10px',
+                                padding: '5px 10px',
+                                backgroundColor: isApplied ? 'gray' : 'black',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: isApplied ? '' : 'pointer'
+                              }}>{isApplied ? '신청완료' : '신청'}</button>
+                          </div>
+
+
+                        )}
+                      </div>
+                    )
+                  })}
                 </>
               )}
             </>
@@ -249,14 +320,19 @@ const Home = () => {
       </div>
 
       {/* 스케줄 버튼 */}
-      <div className="scheduleButton">
+      <div>
         <button
+          className={`navButton ${showSchedule ? 'active' : ''}`}
           onClick={() => {
             const next = !showSchedule
             setShowSchedule(next)
             if (next) {
+              setSelectedLocation(INITIAL_CENTER)
+              setRightPanelOpen(true)
               setMapCenter(INITIAL_CENTER)
               setMapLevel(10)
+            } else {
+              setRightPanelOpen(false)
             }
           }}
         >
