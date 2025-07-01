@@ -116,7 +116,8 @@
     color: #6b7280;
     margin-bottom: 1rem;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    /* -webkit-line-clamp: 2; */
+    white-space: normal;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
