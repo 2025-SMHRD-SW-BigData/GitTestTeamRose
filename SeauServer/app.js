@@ -495,12 +495,12 @@ app.post('/schedules', (req, res) => {
 
 
 app.get('/schedule_members/:scheduleId', (req, res) => { // 경로명을 '/schedule_members/:scheduleId'로 변경
-   const { scheduleId } = req.params;
+    const { scheduleId } = req.params;
 
-  console.log(`스케줄 ${scheduleId}의 멤버 조회 요청 (GET)`); // 로그 메시지 변경
- 
-   // schedule_member와 users 테이블을 조인하여 req_user_id의 프로필 정보까지 가져옵니다.
-   const sql = `
+    console.log(`스케줄 ${scheduleId}의 멤버 조회 요청 (GET)`); // 로그 메시지 변경
+
+    // schedule_member와 users 테이블을 조인하여 req_user_id의 프로필 정보까지 가져옵니다.
+    const sql = `
      SELECT
        sm.req_user_id,
        sm.req_status,
@@ -517,22 +517,23 @@ app.get('/schedule_members/:scheduleId', (req, res) => { // 경로명을 '/sched
      WHERE
       sm.schedule_id = ?; 
    `;
- 
-   conn.connect(); // db 연결통로 열기
-   conn.query(sql, [scheduleId], (err, rows) => {
-     if (err) {
-       console.error('스케줄 멤버 조회 중 오류 발생:', err);
-       return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 조회 실패' });
-     }
-     res.json({ success: true, data: rows });
-     console.log(rows) // 조회된 데이터 로깅
-   });
- });
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [scheduleId], (err, rows) => {
+        if (err) {
+            console.error('스케줄 멤버 조회 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 조회 실패' });
+        }
+        res.json({ success: true, data: rows });
+        console.log(rows) // 조회된 데이터 로깅
+    });
+});
+
 //스케쥴 멤버 수락
 app.post('/schedule/accept', (req, res) => {
     console.log('수락요청');
     const { scheduleId, reqUserId } = req.body;
-    console.log(scheduleId,reqUserId);
+    console.log(scheduleId, reqUserId);
 
     if (!scheduleId || !reqUserId) {
         return res.status(400).json({ success: false, message: 'scheduleId와 reqUserId가 필요합니다.' });
@@ -659,7 +660,7 @@ app.post('/updateSchedule', async (req, res) => { // <-- async 키워드 추가
     }
 
     // 권한 검사: 현재 로그인한 사용자가 스케줄의 생성자인지 확인 (보안상 매우 중요!)
-    
+
 
     try {
         // 권한 확인 후 업데이트 진행
@@ -720,18 +721,46 @@ app.post('/deleteSchedule', (req, res) => {
 
 });
 
-app.get('/schedules/get', (req, res)=>{
-    let sql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id from schedules`
+// 전체 스케줄 데이터 불러오기
+app.get('/schedules/get', (req, res) => {
+    let scheduleSql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id, schedule_image_url, schedule_id from schedules`
+    let memberSql = 'select schedule_id, req_user_id, req_status from schedule_member'
     conn.connect();
-    conn.query(sql, (err, rows)=>{
-        if (!err) {
-            res.status(200).json({
-                schedules: rows
-            });
-        } else {
-            console.error(err);
-            res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
+    conn.query(scheduleSql, (err1, schedules) => {
+        if (err1) {
+            console.error(err1);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
         }
+        conn.query(memberSql, (err2, members) => {
+            if (err2) {
+                console.log(err2)
+                return res.status(500).json({ success: false, message: '서버 오류: 멤버 정보 조회 실패' });
+            }
+
+            res.status(200).json({
+                schedules,
+                members
+            });
+        })
+    })
+})
+
+// 스케줄 신청 
+app.post('/schedule/apply', (req, res) => {
+    console.log('신청')
+    const {schedule_id, user_id} = req.body
+    if (!schedule_id || !user_id) {
+        return res.status(400).json({ success: false, message: '필수 정보 누락: schedule_id 또는 user_id'})  
+    }
+    let sql = `insert into schedule_member (schedule_id, req_user_id, req_status) values (?, ?, ?)`
+    const values = [schedule_id, user_id, 0];
+    conn.connect()
+    conn.query(sql, values, (err, rows) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 신청 실패' });
+        }
+        return res.status(200).json({ success: true, message: '스케줄 신청 성공', insertedId: rows.insertId})
     })
 })
 
