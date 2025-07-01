@@ -34,6 +34,7 @@ const Home = () => {
   const [nearbyAttractions, setNearbyAttractions] = useState([])
   const [nearestBeachName, setNearestBeachName] = useState(null)
   const [showSchedule, setShowSchedule] = useState(false)
+  const [activeScheduleId, setActiveScheduleId] = useState(null);
 
   const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
     if (selectedLocation?.lat === location.lat && selectedLocation?.lng === location.lng) return
@@ -144,6 +145,8 @@ const Home = () => {
           onScheduleMemberChange={handleScheduleMemberChange}
           showSchedule={showSchedule}
           onNearestBeachChange={(beach) => setNearestBeachName(beach?.name || null)}
+          activeScheduleId={activeScheduleId}
+          setActiveScheduleId={setActiveScheduleId}
         />
       </div>
 
@@ -261,6 +264,7 @@ const Home = () => {
                         if (expandedScheduleIdx !== idx) {
                           handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule)
                           setMapLevel(3)
+                          setActiveScheduleId(schedule.scheduleId)
                         }
                       }}>
                         <div className="itemName" style={{ flexGrow: 1 }}>{schedule.title} {approvCount}/{schedule.maxPeople}</div>
@@ -327,12 +331,18 @@ const Home = () => {
             const next = !showSchedule
             setShowSchedule(next)
             if (next) {
-              setSelectedLocation(INITIAL_CENTER)
+              // setSelectedLocation(INITIAL_CENTER)
               setRightPanelOpen(true)
-              setMapCenter(INITIAL_CENTER)
-              setMapLevel(10)
+              // setMapCenter(INITIAL_CENTER)
+              // setMapLevel(10)
+              if (expandedScheduleIdx !== null && scheduleList[expandedScheduleIdx]) {
+                setActiveScheduleId(scheduleList[expandedScheduleIdx].scheduleId);
+              } else {
+                setActiveScheduleId(null);  // 펼친게 없으면 null
+              }
             } else {
               setRightPanelOpen(false)
+              setActiveScheduleId(false)
             }
           }}
         >

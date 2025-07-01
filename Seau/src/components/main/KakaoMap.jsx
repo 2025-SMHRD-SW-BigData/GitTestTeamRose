@@ -14,7 +14,9 @@ const KakaoMap = ({
     onScheduleChange,
     onScheduleMemberChange,
     showSchedule,
-    onNearestBeachChange
+    onNearestBeachChange,
+    activeScheduleId,
+    setActiveScheduleId
 }) => {
     const isKakaoLoaded = useKakaoLoader();
     const [placeMarkerList, setPlaceMarkerList] = useState([]);
@@ -185,24 +187,79 @@ const KakaoMap = ({
             onZoomChanged={handleZoomChanged}
         >
             {markerList.map((m, i) => (
-                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image)}>
+                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image)}
+                    image={{
+                        src: '/blackMarker.png',
+                        size: {
+                            width: 35,
+                            height: 35
+                        },
+                        options: {
+                            offset: {
+                                x: 15,
+                                y: 35
+                            }
+                        }
+                    }}
+                >
                     <div>{m.name}</div>
                 </MapMarker>
             ))}
 
             {nearbyMarkers.map((m, i) => (
-                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image, m)}>
+                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image, m)}
+                    image={{
+                        src: '/blueMarker.png',
+                        size: {
+                            width: 35,
+                            height: 35
+                        },
+                        options: {
+                            offset: {
+                                x: 15,
+                                y: 35
+                            }
+                        }
+                    }}
+                >
                     <div style={{ color: m.type === 'beach' ? 'black' : 'orange' }}>{m.name}</div>
                 </MapMarker>
             ))}
 
-            {showSchedule && scheduleList.map((s, i) => (
-                <MapMarker key={i} position={{ lat: s.lat, lng: s.lng }} onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}>
+            {showSchedule && activeScheduleId && scheduleList.filter(s => s.scheduleId === activeScheduleId).map((s, i) => (
+                <MapMarker key={i} position={{ lat: s.lat, lng: s.lng }} onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}
+                    image={{
+                        src: '/redMarker.png',
+                        size: {
+                            width: 35,
+                            height: 35
+                        },
+                        options: {
+                            offset: {
+                                x: 15,
+                                y: 35
+                            }
+                        }
+                    }}
+                >
                     <div style={{ color: 'red' }}>{s.title}</div>
                 </MapMarker>
             ))}
 
-            {selectedLocation && <MapMarker position={selectedLocation} />}
+            {selectedLocation && <MapMarker position={selectedLocation}
+                image={{
+                    src: '/blueMarker.png',
+                    size: {
+                        width: 35,
+                        height: 35
+                    },
+                    options: {
+                        offset: {
+                            x: 15,
+                            y: 35
+                        }
+                    }
+                }} />}
         </Map>
     );
 };
