@@ -716,6 +716,7 @@ export function ScheduleManagement() {
                 max_participants: parseInt(newSchedule.max_participants),
                 cost_per_person: parseFloat(newSchedule.cost_per_person),
                 schedule_image_url: finalScheduleImageUrl,
+                user_type : userData.user_type,
             };
             console.log('생성할 스케줄 데이터:', dataToSend);
 
