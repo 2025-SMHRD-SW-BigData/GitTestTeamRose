@@ -281,8 +281,8 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    width: 94%; /* 부모 요소에 맞게 조정 */
-    padding: 12px;
+    width: 100%;
+    padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     font-size: 1rem;
@@ -294,8 +294,8 @@ const Input = styled.input`
 `;
 
 const Textarea = styled.textarea`
-    width: 94%; /* 부모 요소에 맞게 조정 */
-    padding: 12px;
+    width: 100%;
+    padding: 0.75rem;
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     font-size: 1rem;
@@ -716,7 +716,6 @@ export function ScheduleManagement() {
                 max_participants: parseInt(newSchedule.max_participants),
                 cost_per_person: parseFloat(newSchedule.cost_per_person),
                 schedule_image_url: finalScheduleImageUrl,
-                user_type : userData.user_type,
             };
             console.log('생성할 스케줄 데이터:', dataToSend);
 

@@ -495,12 +495,12 @@ app.post('/schedules', (req, res) => {
 
 
 app.get('/schedule_members/:scheduleId', (req, res) => { // 경로명을 '/schedule_members/:scheduleId'로 변경
-   const { scheduleId } = req.params;
+    const { scheduleId } = req.params;
 
-  console.log(`스케줄 ${scheduleId}의 멤버 조회 요청 (GET)`); // 로그 메시지 변경
- 
-   // schedule_member와 users 테이블을 조인하여 req_user_id의 프로필 정보까지 가져옵니다.
-   const sql = `
+    console.log(`스케줄 ${scheduleId}의 멤버 조회 요청 (GET)`); // 로그 메시지 변경
+
+    // schedule_member와 users 테이블을 조인하여 req_user_id의 프로필 정보까지 가져옵니다.
+    const sql = `
      SELECT
        sm.req_user_id,
        sm.req_status,
@@ -517,22 +517,23 @@ app.get('/schedule_members/:scheduleId', (req, res) => { // 경로명을 '/sched
      WHERE
       sm.schedule_id = ?; 
    `;
- 
-   conn.connect(); // db 연결통로 열기
-   conn.query(sql, [scheduleId], (err, rows) => {
-     if (err) {
-       console.error('스케줄 멤버 조회 중 오류 발생:', err);
-       return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 조회 실패' });
-     }
-     res.json({ success: true, data: rows });
-     console.log(rows) // 조회된 데이터 로깅
-   });
- });
+
+    conn.connect(); // db 연결통로 열기
+    conn.query(sql, [scheduleId], (err, rows) => {
+        if (err) {
+            console.error('스케줄 멤버 조회 중 오류 발생:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 멤버 조회 실패' });
+        }
+        res.json({ success: true, data: rows });
+        console.log(rows) // 조회된 데이터 로깅
+    });
+});
+
 //스케쥴 멤버 수락
 app.post('/schedule/accept', (req, res) => {
     console.log('수락요청');
     const { scheduleId, reqUserId } = req.body;
-    console.log(scheduleId,reqUserId);
+    console.log(scheduleId, reqUserId);
 
     if (!scheduleId || !reqUserId) {
         return res.status(400).json({ success: false, message: 'scheduleId와 reqUserId가 필요합니다.' });
@@ -659,7 +660,7 @@ app.post('/updateSchedule', async (req, res) => { // <-- async 키워드 추가
     }
 
     // 권한 검사: 현재 로그인한 사용자가 스케줄의 생성자인지 확인 (보안상 매우 중요!)
-    
+
 
     try {
         // 권한 확인 후 업데이트 진행
@@ -720,20 +721,76 @@ app.post('/deleteSchedule', (req, res) => {
 
 });
 
-app.get('/schedules/get', (req, res)=>{
-    let sql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id from schedules`
+// 전체 스케줄 데이터 불러오기
+app.get('/schedules/get', (req, res) => {
+    let scheduleSql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id, schedule_image_url, schedule_id from schedules`
+    let memberSql = 'select schedule_id, req_user_id, req_status from schedule_member'
     conn.connect();
-    conn.query(sql, (err, rows)=>{
-        if (!err) {
-            res.status(200).json({
-                schedules: rows
-            });
-        } else {
-            console.error(err);
-            res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
+    conn.query(scheduleSql, (err1, schedules) => {
+        if (err1) {
+            console.error(err1);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 정보 조회 실패' });
         }
+        conn.query(memberSql, (err2, members) => {
+            if (err2) {
+                console.log(err2)
+                return res.status(500).json({ success: false, message: '서버 오류: 멤버 정보 조회 실패' });
+            }
+
+            res.status(200).json({
+                schedules,
+                members
+            });
+        })
     })
 })
+
+app.post('/schedule/apply', (req, res) => {
+    console.log('스케줄 신청 요청');
+    const { schedule_id, user_id } = req.body; // user_id는 신청하는 사용자의 ID입니다.
+
+    // 필수 정보 누락 확인
+    if (!schedule_id || !user_id) {
+        return res.status(400).json({ success: false, message: '필수 정보 누락: schedule_id 또는 user_id' });
+    }
+
+    // 데이터베이스 연결 (conn.connect()는 일반적으로 한 번만 호출됩니다. 여기서는 예시를 위해 포함)
+    // 실제 애플리케이션에서는 풀(pool)을 사용하거나 연결 관리를 더 견고하게 해야 합니다.
+    conn.connect();
+
+    // 1. schedule 테이블에서 해당 schedule_id의 생성자(user_id)를 조회합니다.
+    let getCreatorSql = `SELECT user_id FROM schedules WHERE schedule_id = ?`;
+    conn.query(getCreatorSql, [schedule_id], (err, rows) => {
+        if (err) {
+            console.error('스케줄 생성자 조회 오류:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 생성자 정보를 가져오지 못했습니다.' });
+        }
+
+        // 스케줄 ID에 해당하는 생성자를 찾지 못한 경우
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: '스케줄을 찾을 수 없거나 생성자 정보가 없습니다.' });
+        }
+
+        const creater_id = rows[0].user_id; // 스케줄의 생성자 ID
+
+        // 2. schedule_member 테이블에 신청 정보와 생성자 ID를 함께 삽입합니다.
+        // req_user_id는 신청하는 사용자, creater_id는 스케줄 생성자입니다.
+        let insertMemberSql = `INSERT INTO schedule_member (schedule_id, req_user_id, creater_id, req_status) VALUES (?, ?, ?, ?)`;
+        const values = [schedule_id, user_id, creater_id, 0]; // req_status는 0으로 고정 (예: 대기 상태)
+
+        conn.query(insertMemberSql, values, (err, result) => {
+            if (err) {
+                console.error('스케줄 신청 삽입 오류:', err);
+                // 중복 신청 등 특정 오류에 대한 더 세부적인 메시지 처리가 필요할 수 있습니다.
+                if (err.code === 'ER_DUP_ENTRY') { // MySQL의 경우 중복 키 오류 코드
+                    return res.status(409).json({ success: false, message: '이미 신청된 스케줄입니다.' });
+                }
+                return res.status(500).json({ success: false, message: '서버 오류: 스케줄 신청 실패' });
+            }
+            return res.status(200).json({ success: true, message: '스케줄 신청 성공', insertedId: result.insertId });
+        });
+    });
+});
 
 // 서버 시작
 app.listen(3001, () => {
