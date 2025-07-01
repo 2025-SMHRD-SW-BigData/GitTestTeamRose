@@ -49,6 +49,16 @@ const Title = styled.h1`
     color: #111827;
 `;
 
+const SectionTitle = styled.h2`
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+`;
+
 const Button = styled.button`
     display: flex;
     align-items: center;
@@ -352,12 +362,13 @@ const ScheduleMembersSection = styled.div`
     padding-top: 1.5rem;
 `;
 
-const SectionTitle = styled.h3`
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #111827;
-    margin-bottom: 1rem;
-`;
+// SectionTitle은 이미 정의되어 있으므로 중복 제거
+// const SectionTitle = styled.h3`
+//     font-size: 1.25rem;
+//     font-weight: 600;
+//     color: #111827;
+//     margin-bottom: 1rem;
+// `;
 
 const MemberList = styled.ul`
     list-style: none;
@@ -439,7 +450,7 @@ const ProfileDetail = styled.p`
     margin-bottom: 0.5rem;
 `;
 
-// 이미지 업로드 관련 스타일 추가
+// 이미지 업로드 관련 스타일 추가 (기존 ProfileManagement에서 가져옴)
 const AvatarContainer = styled.div`
     display: flex;
     flex-direction: column;
@@ -509,10 +520,13 @@ const HelpText = styled.p`
 
 // --- ScheduleManagement 컴포넌트 시작 ---
 export function ScheduleManagement() {
-    const { userId } = useContext(UserContext); // 현재 로그인한 사용자 ID
+    const { userId, userData, placeData } = useContext(UserContext); // 현재 로그인한 사용자 ID, userData, placeData
     const navigate = useNavigate();
-    const {userData, placeData} = useContext(UserContext);
-    const [schedules, setSchedules] = useState([]);
+
+    // 내가 만든 스케줄과 내가 신청한 스케줄을 위한 새로운 상태
+    const [myCreatedSchedules, setMyCreatedSchedules] = useState([]);
+    const [myAppliedSchedules, setMyAppliedSchedules] = useState([]);
+
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
@@ -550,46 +564,62 @@ export function ScheduleManagement() {
         // }, 5000);
     };
 
-    // 스케줄 목록 불러오기
-    const fetchSchedules = useCallback(async () => {
+    // 내가 만든 스케줄 목록 불러오기
+    const fetchMyCreatedSchedules = useCallback(async () => {
         if (!userId) return;
         try {
             const res = await axios.post('http://localhost:3001/schedules', { userId });
             if (res.data.success) {
-                setSchedules(res.data.data);
+                setMyCreatedSchedules(res.data.data);
             } else {
-                showMessage(`스케줄 로드 실패: ${res.data.message}`, 'error');
+                showMessage(`내가 만든 스케줄 로드 실패: ${res.data.message}`, 'error');
             }
         } catch (error) {
-            console.error('스케줄 로드 중 오류 발생:', error);
-            showMessage('스케줄 정보를 불러오는 데 실패했습니다.', 'error');
+            console.error('내가 만든 스케줄 로드 중 오류 발생:', error);
+            showMessage('내가 만든 스케줄 정보를 불러오는 데 실패했습니다.', 'error');
         }
     }, [userId]);
 
+    // 내가 신청한 스케줄 목록 불러오기
+    const fetchMyAppliedSchedules = useCallback(async () => {
+        if (!userId) return;
+        try {
+            const res = await axios.post('http://localhost:3001/schedules/applied', { userId });
+            if (res.data.success) {
+                setMyAppliedSchedules(res.data.data);
+            } else {
+                showMessage(`내가 신청한 스케줄 로드 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('내가 신청한 스케줄 로드 중 오류 발생:', error);
+            showMessage('내가 신청한 스케줄 정보를 불러오는 데 실패했습니다.', 'error');
+        }
+    }, [userId]);
+
+
     useEffect(() => {
-        fetchSchedules();
-    }, [fetchSchedules]);
+        fetchMyCreatedSchedules();
+        fetchMyAppliedSchedules(); // 내가 신청한 스케줄도 함께 불러옵니다.
+    }, [fetchMyCreatedSchedules, fetchMyAppliedSchedules]);
 
     // --- 모달 열고 닫는 함수들 ---
     const handleOpenCreateModal = () => {
-        setNewSchedule({
-            title: '', description: '', location_name: '', address: '',
-            scheduled_date: '', max_participants: '', cost_per_person: '',
-            schedule_image_url: '',
-        });
         // user_type이 1이고 placeData가 있을 때 자동 채우기
-        if (userData && userData.user_type === 1 && placeData) {
+        console.log(placeData);
+        if (userData && userData.user_type === 1) { // placeData가 배열일 수 있으므로 첫 번째 요소 확인
+          
             setNewSchedule({
-            title: '', description: '', location_name: placeData.place_name, address: placeData.address,
-            scheduled_date: '', max_participants: '', cost_per_person: '',
-            schedule_image_url: '',
-        });
+                title: '', description: '', location_name: placeData.place_name, address: placeData.address,
+                scheduled_date: '', max_participants: '', cost_per_person: '',
+                schedule_image_url: '',
+            });
         } else {
             // user_type이 1이 아니거나 placeData가 없으면 빈 값으로 초기화
             setNewSchedule({
-            title: '', description: '', location_name: '', address: '',
-            scheduled_date: '', max_participants: '', cost_per_person: '',
-            schedule_image_url: '', });
+                title: '', description: '', location_name: '', address: '',
+                scheduled_date: '', max_participants: '', cost_per_person: '',
+                schedule_image_url: '',
+            });
         }
         setSelectedScheduleImageFile(null); // 파일 선택 초기화
         setIsCreateModalOpen(true);
@@ -664,8 +694,7 @@ export function ScheduleManagement() {
         }
     };
 
-    const handleImageClick = (isForNewSchedule) => {
-        // fileInputRef는 하나만 사용되므로, true/false로 구분할 필요 없이 항상 imageInputRef를 사용
+    const handleImageClick = () => { // isForNewSchedule 인자 제거, imageInputRef는 하나만 사용
         imageInputRef.current?.click();
     };
 
@@ -716,7 +745,7 @@ export function ScheduleManagement() {
                 max_participants: parseInt(newSchedule.max_participants),
                 cost_per_person: parseFloat(newSchedule.cost_per_person),
                 schedule_image_url: finalScheduleImageUrl,
-                user_type : userData.user_type,
+                user_type: userData.user_type,
             };
             console.log('생성할 스케줄 데이터:', dataToSend);
 
@@ -724,7 +753,7 @@ export function ScheduleManagement() {
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 생성되었습니다!', 'success');
                 handleCloseCreateModal();
-                fetchSchedules();
+                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
             } else {
                 showMessage(`스케줄 생성 실패: ${res.data.message}`, 'error');
             }
@@ -753,7 +782,7 @@ export function ScheduleManagement() {
             if (selectedScheduleImageFile) {
                 console.log('스케줄 이미지 업데이트 중 (AWS S3 직접 업로드)...');
                 const fileExtension = selectedScheduleImageFile.name.split('.').pop();
-                const s3Key = `schedule_images/${Date.now()}.${fileExtension}`;
+                const s3Key = `schedule_images/${Date.now()}.${fileExtension}`; // userId를 키에 포함할 수도 있습니다.
 
                 const arrayBuffer = await selectedScheduleImageFile.arrayBuffer();
                 const bodyData = new Uint8Array(arrayBuffer);
@@ -789,7 +818,7 @@ export function ScheduleManagement() {
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 업데이트되었습니다!', 'success');
                 handleCloseEditModal();
-                fetchSchedules();
+                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
             } else {
                 showMessage(`스케줄 업데이트 실패: ${res.data.message}`, 'error');
             }
@@ -808,7 +837,7 @@ export function ScheduleManagement() {
             const res = await axios.post('http://localhost:3001/deleteSchedule', { userId, scheduleId });
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 삭제되었습니다!', 'success');
-                fetchSchedules();
+                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
             } else {
                 showMessage(`스케줄 삭제 실패: ${res.data.message}`, 'error');
             }
@@ -840,10 +869,10 @@ export function ScheduleManagement() {
     const handleMemberClickForProfile = async (e, scheduleId, memberId, reqStatus) => {
         e.stopPropagation();
         try {
-            // 리액트에서 보낸 userId는 users 테이블의 user_id 컬럼과 비교할거야.
-            const res = await axios.post('http://localhost:3001/mypage', { userId: memberId });
+            // 백엔드에서 특정 사용자 프로필을 가져오는 GET 요청을 사용합니다.
+            const res = await axios.get(`http://localhost:3001/users/${memberId}`);
             if (res.data.success) {
-                const memberProfile = res.data.data.user;
+                const memberProfile = res.data.data;
                 setSelectedMemberProfile(memberProfile);
                 setCurrentMemberStatusForModal(reqStatus);
                 setIsProfileModalOpen(true);
@@ -871,9 +900,9 @@ export function ScheduleManagement() {
 
             if (res.data.success) {
                 showMessage(`참여 요청이 성공적으로 ${message}되었습니다!`, 'success');
-                fetchScheduleMembers(selectedScheduleForMembers.schedule_id);
+                fetchScheduleMembers(selectedScheduleForMembers.schedule_id); // 멤버 목록 새로고침
+                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록의 참여자 수 업데이트를 위해 새로고침
                 handleCloseProfileModal();
-                fetchSchedules();
             } else {
                 showMessage(`참여 요청 ${message} 실패: ${res.data.message}`, 'error');
             }
@@ -899,16 +928,18 @@ export function ScheduleManagement() {
                 </MessageBar>
             )}
 
-            {schedules.length === 0 ? (
+            {/* 내가 만든 스케줄 섹션 */}
+            <SectionTitle>내가 만든 스케줄</SectionTitle>
+            {myCreatedSchedules.length === 0 ? (
                 <EmptyState>생성된 스케줄이 없습니다. 새로운 스케줄을 만들어 보세요!</EmptyState>
             ) : (
                 <ScheduleGrid>
-                    {schedules.map((schedule) => (
+                    {myCreatedSchedules.map((schedule) => (
                         <ScheduleCard key={schedule.schedule_id}>
                             {schedule.schedule_image_url ? (
                                 <CardImage src={schedule.schedule_image_url} alt="Schedule Image" />
                             ) : (
-                                <CardImage as="div">No Image</CardImage>
+                                <CardImage as="div">이미지 없음</CardImage>
                             )}
                             <CardContent>
                                 <CardTitle>{schedule.title}</CardTitle>
@@ -945,6 +976,51 @@ export function ScheduleManagement() {
                 </ScheduleGrid>
             )}
 
+            {/* 내가 신청한 스케줄 섹션 */}
+            <SectionTitle>내가 신청한 스케줄</SectionTitle>
+            {myAppliedSchedules.length === 0 ? (
+                <EmptyState>신청한 스케줄이 없습니다. 다른 스케줄에 참여해보세요!</EmptyState>
+            ) : (
+                <ScheduleGrid>
+                    {myAppliedSchedules.map((schedule) => (
+                        <ScheduleCard key={schedule.schedule_id}>
+                            {schedule.schedule_image_url ? (
+                                <CardImage src={schedule.schedule_image_url} alt="Schedule Image" />
+                            ) : (
+                                <CardImage as="div">이미지 없음</CardImage>
+                            )}
+                            <CardContent>
+                                <CardTitle>{schedule.title}</CardTitle>
+                                <CardDescription>{schedule.description || '설명 없음'}</CardDescription>
+                                <CardDetail>
+                                    <strong>장소:</strong> {schedule.location_name || ''} ({schedule.address})
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>날짜:</strong> {new Date(schedule.scheduled_date).toLocaleDateString('ko-KR')}
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>참여자:</strong> {schedule.checked_people || 0} / {schedule.max_participants}명
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>내 신청 상태:</strong>
+                                    <MemberStatus status={schedule.my_req_status}>
+                                        {schedule.my_req_status === 0 && '대기중❕'}
+                                        {schedule.my_req_status === 1 && '수락됨✅'}
+                                        {schedule.my_req_status === 2 && '거절됨❌'}
+                                    </MemberStatus>
+                                </CardDetail>
+                                <CardDetail>
+                                    <strong>비용:</strong> {schedule.cost_per_person.toLocaleString()}원/인
+                                </CardDetail>
+                                {/* 신청한 스케줄은 수정/삭제 버튼 대신 다른 액션 버튼이 필요할 수 있습니다. */}
+                                {/* 예: 신청 취소 버튼 등. 여기서는 일단 버튼을 제거했습니다. */}
+                            </CardContent>
+                        </ScheduleCard>
+                    ))}
+                </ScheduleGrid>
+            )}
+
+
             {/* 새 스케줄 생성 모달 */}
             {isCreateModalOpen && (
                 <ModalOverlay onClick={handleCloseCreateModal}>
@@ -968,7 +1044,7 @@ export function ScheduleManagement() {
                                         <AvatarFallback>No Image</AvatarFallback>
                                     )}
                                 </Avatar>
-                                <CameraButton type="button" onClick={() => handleImageClick(true)}>
+                                <CameraButton type="button" onClick={handleImageClick}> {/* isForNewSchedule 인자 제거 */}
                                     <Camera size={16} />
                                 </CameraButton>
                                 <HiddenInput
@@ -1091,7 +1167,7 @@ export function ScheduleManagement() {
                                         <AvatarFallback>No Image</AvatarFallback>
                                     )}
                                 </Avatar>
-                                <CameraButton type="button" onClick={() => handleImageClick(false)}>
+                                <CameraButton type="button" onClick={handleImageClick}> {/* isForNewSchedule 인자 제거 */}
                                     <Camera size={16} />
                                 </CameraButton>
                                 <HiddenInput
@@ -1204,7 +1280,7 @@ export function ScheduleManagement() {
                                             onClick={(e) => handleMemberClickForProfile(e, selectedScheduleForMembers.schedule_id, member.req_user_id, member.req_status)}
                                         >
                                             <MemberInfo>
-                                                <MemberName>{member.user_name} ({member.req_user_id})</MemberName>
+                                                <MemberName>{member.nickname} ({member.req_user_id})</MemberName> {/* user_name 대신 nickname 사용 */}
                                                 <MemberStatus status={member.req_status}>
                                                     {member.req_status === 0 && '대기중❕'}
                                                     {member.req_status === 1 && '수락됨✅'}
@@ -1227,7 +1303,6 @@ export function ScheduleManagement() {
                 </ModalOverlay>
             )}
 
-            {/* 프로필 모달 (가장 높은 z-index) */}
             {isProfileModalOpen && selectedMemberProfile && (
                 <ModalOverlayProfile onClick={handleCloseProfileModal}>
                     <ModalContent onClick={(e) => e.stopPropagation()}>
@@ -1239,13 +1314,13 @@ export function ScheduleManagement() {
                             {selectedMemberProfile.profile_image_url ? (
                                 <ProfileImage src={selectedMemberProfile.profile_image_url} alt="프로필 이미지" />
                             ) : (
-                                <ProfileImage src="/default-profile.png" alt="기본 프로필 이미지" />
+                                <ProfileImage src="https://placehold.co/120x120/cccccc/333333?text=No+Image" alt="기본 프로필 이미지" /> 
                             )}
                         </ProfileImageContainer>
                         <div>
                             <ProfileDetail><strong>닉네임:</strong> {selectedMemberProfile.nickname}</ProfileDetail>
                             <ProfileDetail><strong>성별:</strong> {selectedMemberProfile.gender}</ProfileDetail>
-                            <ProfileDetail><strong>생년월일:</strong> {new Date(selectedMemberProfile.birth_date).toLocaleDateString('ko-KR')}</ProfileDetail>
+                            <ProfileDetail><strong>생년월일:</strong> {selectedMemberProfile.birth_date ? new Date(selectedMemberProfile.birth_date).toLocaleDateString('ko-KR') : '정보 없음'}</ProfileDetail> {/* 날짜 포맷팅 및 정보 없음 처리 */}
                             <ProfileDetail><strong>휴대폰:</strong> {selectedMemberProfile.phone_number}</ProfileDetail>
                             <ProfileDetail><strong>mbti:</strong> {selectedMemberProfile.mbti}</ProfileDetail>
                             <ProfileDetail><strong>자기소개:</strong> {selectedMemberProfile.introduce || '없음'}</ProfileDetail>
