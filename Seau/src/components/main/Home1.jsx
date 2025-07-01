@@ -129,6 +129,7 @@ const Home = () => {
     ))
 
   console.log(scheduleMemberList)
+  console.log(nearbySchedule)
 
   return (
     <div className="container">
@@ -251,57 +252,83 @@ const Home = () => {
               {showSchedule && (
                 <>
                   <h3 style={{ margin: '10px' }}>📅 일정 리스트</h3>
-                  {nearbySchedule.map((schedule, idx) => {
-                    const approvCount = scheduleMemberList.filter(
-                      (m) => m.schedule_id === schedule.scheduleId && m.req_status === 1
-                    ).length
+                  <div className="schedule-grid">
+                    {nearbySchedule.map((schedule, idx) => {
+                      const approvCount = scheduleMemberList.filter(
+                        (m) => m.schedule_id === schedule.scheduleId && m.req_status === 1
+                      ).length;
 
-                    const isApplied = scheduleMemberList.some(
-                      (m) => m.schedule_id === schedule.scheduleId && m.req_user_id === userId
-                    )
+                      const isApplied = scheduleMemberList.some(
+                        (m) => m.schedule_id === schedule.scheduleId && m.req_user_id === userId
+                      );
 
-                    return (
-                      <div key={idx} className="item" onClick={() => {
-                        setExpandedScheduleIdx(prev => prev === idx ? null : idx)
-                        if (expandedScheduleIdx !== idx) {
-                          handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule)
-                          setMapLevel(3)
-                          setActiveScheduleId(schedule.scheduleId)
-                        }
-                      }}>
-                        <div className="itemName" style={{ flexGrow: 1 }}>{schedule.title} {approvCount}/{schedule.maxPeople}</div>
-                        {expandedScheduleIdx === idx && (
-                          <div className="itemInfo2">
-                            <p>{schedule.description}</p>
-                            <p>날짜: {schedule.Date.toLocaleString('ko-KR')}</p>
-                            <p>장소: {schedule.location}</p>
-                            <p>인원: {schedule.maxPeople}명</p>
-                            <p>비용: {schedule.perCost}원</p>
-                            <p>상태: {schedule.status}</p>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isApplied) handleApply(schedule.scheduleId)
-                              }}
-                              disabled={isApplied}
-                              style={{
-                                marginLeft: '10px',
-                                padding: '5px 10px',
-                                backgroundColor: isApplied ? 'gray' : 'black',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: isApplied ? '' : 'pointer'
-                              }}>{isApplied ? '신청완료' : '신청'}</button>
+                      const isExpanded = expandedScheduleIdx === idx;
+
+                      return (
+                        <div
+                          key={idx}
+                          className="schedule-card"
+                          onClick={() => {
+                            setExpandedScheduleIdx(prev => prev === idx ? null : idx);
+                            if (expandedScheduleIdx !== idx) {
+                              handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule);
+                              setMapLevel(3);
+                              setActiveScheduleId(schedule.scheduleId);
+                            }
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+
+                          <div className="card-content">
+                            <h4 className="card-title">{schedule.title}</h4>
+                            {schedule.scheduleImage && (
+                              <img
+                                src={schedule.scheduleImage}
+                                alt="Schedule"
+                                className="card-image"
+                              />
+                            )}
+                            <div className="card-detail">
+                              <strong>참여자:</strong> {approvCount}/{schedule.maxPeople}명
+                            </div>
+
+                            {isExpanded && (
+                              <>
+                                <p className="card-description">{schedule.description || '설명 없음'}</p>
+                                <div className="card-detail">
+                                  <strong>날짜:</strong> {new Date(schedule.Date).toLocaleString('ko-KR')}
+                                </div>
+                                <div className="card-detail">
+                                  <strong>장소:</strong> {schedule.location}
+                                </div>
+                                <div className="card-detail">
+                                  <strong>비용:</strong> {schedule.perCost.toLocaleString()}원
+                                </div>
+                                <div className="card-detail">
+                                  <strong>상태:</strong> {schedule.status}
+                                </div>
+                                <div className="card-actions">
+                                  <button
+                                    className={`action-button ${isApplied ? 'close' : 'accept'}`}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (!isApplied) handleApply(schedule.scheduleId);
+                                    }}
+                                    disabled={isApplied}
+                                  >
+                                    {isApplied ? '신청완료' : '신청'}
+                                  </button>
+                                </div>
+                              </>
+                            )}
                           </div>
-
-
-                        )}
-                      </div>
-                    )
-                  })}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </>
               )}
+
             </>
           )}
 
