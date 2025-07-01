@@ -16,6 +16,7 @@ const KakaoMap = ({
     showSchedule,
     onNearestBeachChange,
     activeScheduleId,
+    onNearbyScheduleChange,
 }) => {
     const isKakaoLoaded = useKakaoLoader();
     const [placeMarkerList, setPlaceMarkerList] = useState([]);
@@ -23,6 +24,7 @@ const KakaoMap = ({
     const [markerList, setMarkerList] = useState([]);
     const [scheduleList, setScheduleList] = useState([]);
     const [scheduleMemberList, setScheduleMemberList] = useState([])
+    const [nearbySchedule, setNearbySchedule] = useState([])
     const mapRef = useRef(null);
 
     useEffect(() => {
@@ -103,11 +105,14 @@ const KakaoMap = ({
         const nearbyTour = placeMarkerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
         const nearbyBeach = markerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
         const nearby = [...nearbyTour, ...nearbyBeach];
+        const filterd = scheduleList.filter((s) => getDistance(selectedLocation.lat, selectedLocation.lng, s.lat, s.lng) < 10)
 
         setNearbyMarkers(nearby);
         onNearbyMarkersChange?.(nearby);
         onScheduleChange?.(scheduleList);
         onScheduleMemberChange?.(scheduleMemberList)
+        setNearbySchedule(filterd)
+        onNearbyScheduleChange?.(filterd)
 
         // 가장 가까운 해변
         let minDist = Infinity;
@@ -120,7 +125,7 @@ const KakaoMap = ({
             }
         }
         onNearestBeachChange?.(minDist <= 10 ? closest : null);
-    }, [selectedLocation, placeMarkerList, markerList]);
+    }, [selectedLocation, placeMarkerList, markerList, scheduleList]);
 
     const geocodeAddress = (address) => {
         return new Promise((resolve, reject) => {
@@ -225,25 +230,20 @@ const KakaoMap = ({
                 </MapMarker>
             ))}
 
-            {showSchedule && activeScheduleId && scheduleList.filter(s => s.scheduleId === activeScheduleId).map((s, i) => (
-                <MapMarker key={i} position={{ lat: s.lat, lng: s.lng }} onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}
-                    image={{
-                        src: '/redMarker.png',
-                        size: {
-                            width: 35,
-                            height: 35
-                        },
-                        options: {
-                            offset: {
-                                x: 15,
-                                y: 35
-                            }
-                        }
-                    }}
-                >
-                    <div style={{ color: 'red' }}>{s.title}</div>
-                </MapMarker>
-            ))}
+            {showSchedule && activeScheduleId && nearbySchedule
+                .filter(s => s.scheduleId === activeScheduleId)
+                .map(s => (
+                    <MapMarker key={s.scheduleId} position={{ lat: s.lat, lng: s.lng }}
+                        onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}
+                        image={{
+                            src: '/redMarker.png',
+                            size: { width: 35, height: 35 },
+                            options: { offset: { x: 15, y: 35 } }
+                        }}
+                    >
+                        <div style={{ color: 'red' }}>{s.title}</div>
+                    </MapMarker>
+                ))}
 
             {selectedLocation && <MapMarker position={selectedLocation}
                 image={{

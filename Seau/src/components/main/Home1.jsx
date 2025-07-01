@@ -35,6 +35,7 @@ const Home = () => {
   const [nearestBeachName, setNearestBeachName] = useState(null)
   const [showSchedule, setShowSchedule] = useState(false)
   const [activeScheduleId, setActiveScheduleId] = useState(null);
+  const [nearbySchedule, setNearbySchedule] = useState([])
 
   const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
     if (selectedLocation?.lat === location.lat && selectedLocation?.lng === location.lng) return
@@ -147,6 +148,7 @@ const Home = () => {
           onNearestBeachChange={(beach) => setNearestBeachName(beach?.name || null)}
           activeScheduleId={activeScheduleId}
           setActiveScheduleId={setActiveScheduleId}
+          onNearbyScheduleChange={setNearbySchedule}
         />
       </div>
 
@@ -249,7 +251,7 @@ const Home = () => {
               {showSchedule && (
                 <>
                   <h3 style={{ margin: '10px' }}>📅 일정 리스트</h3>
-                  {scheduleList.map((schedule, idx) => {
+                  {nearbySchedule.map((schedule, idx) => {
                     const approvCount = scheduleMemberList.filter(
                       (m) => m.schedule_id === schedule.scheduleId && m.req_status === 1
                     ).length
@@ -335,14 +337,15 @@ const Home = () => {
               setRightPanelOpen(true)
               // setMapCenter(INITIAL_CENTER)
               // setMapLevel(10)
-              if (expandedScheduleIdx !== null && scheduleList[expandedScheduleIdx]) {
-                setActiveScheduleId(scheduleList[expandedScheduleIdx].scheduleId);
+              const defaultSchedule = nearbySchedule[0]; // 주변 스케줄이 있을 경우 첫 번째 선택
+              if (expandedScheduleIdx !== null && nearbySchedule[expandedScheduleIdx]) {
+                setActiveScheduleId(nearbySchedule[expandedScheduleIdx].scheduleId);
               } else {
                 setActiveScheduleId(null);  // 펼친게 없으면 null
               }
             } else {
               setRightPanelOpen(false)
-              setActiveScheduleId(false)
+              setActiveScheduleId(null)
             }
           }}
         >
