@@ -16,7 +16,6 @@ const KakaoMap = ({
     showSchedule,
     onNearestBeachChange,
     activeScheduleId,
-    setActiveScheduleId
 }) => {
     const isKakaoLoaded = useKakaoLoader();
     const [placeMarkerList, setPlaceMarkerList] = useState([]);
