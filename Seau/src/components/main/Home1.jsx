@@ -6,6 +6,7 @@ import Weather from './Weather'
 import KakaoMap from './KakaoMap'
 import getDistance from './getDistance'
 import '../../style/Seau.css'
+import '../../style/ScheduleManagement.css'
 
 const busyColor = {
   원활: 'item',
