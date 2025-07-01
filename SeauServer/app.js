@@ -745,24 +745,52 @@ app.get('/schedules/get', (req, res) => {
     })
 })
 
-// 스케줄 신청 
 app.post('/schedule/apply', (req, res) => {
-    console.log('신청')
-    const {schedule_id, user_id} = req.body
+    console.log('스케줄 신청 요청');
+    const { schedule_id, user_id } = req.body; // user_id는 신청하는 사용자의 ID입니다.
+
+    // 필수 정보 누락 확인
     if (!schedule_id || !user_id) {
-        return res.status(400).json({ success: false, message: '필수 정보 누락: schedule_id 또는 user_id'})  
+        return res.status(400).json({ success: false, message: '필수 정보 누락: schedule_id 또는 user_id' });
     }
-    let sql = `insert into schedule_member (schedule_id, req_user_id, req_status) values (?, ?, ?)`
-    const values = [schedule_id, user_id, 0];
-    conn.connect()
-    conn.query(sql, values, (err, rows) => {
+
+    // 데이터베이스 연결 (conn.connect()는 일반적으로 한 번만 호출됩니다. 여기서는 예시를 위해 포함)
+    // 실제 애플리케이션에서는 풀(pool)을 사용하거나 연결 관리를 더 견고하게 해야 합니다.
+    conn.connect();
+
+    // 1. schedule 테이블에서 해당 schedule_id의 생성자(user_id)를 조회합니다.
+    let getCreatorSql = `SELECT user_id FROM schedules WHERE schedule_id = ?`;
+    conn.query(getCreatorSql, [schedule_id], (err, rows) => {
         if (err) {
-            console.error(err);
-            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 신청 실패' });
+            console.error('스케줄 생성자 조회 오류:', err);
+            return res.status(500).json({ success: false, message: '서버 오류: 스케줄 생성자 정보를 가져오지 못했습니다.' });
         }
-        return res.status(200).json({ success: true, message: '스케줄 신청 성공', insertedId: rows.insertId})
-    })
-})
+
+        // 스케줄 ID에 해당하는 생성자를 찾지 못한 경우
+        if (rows.length === 0) {
+            return res.status(404).json({ success: false, message: '스케줄을 찾을 수 없거나 생성자 정보가 없습니다.' });
+        }
+
+        const creater_id = rows[0].user_id; // 스케줄의 생성자 ID
+
+        // 2. schedule_member 테이블에 신청 정보와 생성자 ID를 함께 삽입합니다.
+        // req_user_id는 신청하는 사용자, creater_id는 스케줄 생성자입니다.
+        let insertMemberSql = `INSERT INTO schedule_member (schedule_id, req_user_id, creater_id, req_status) VALUES (?, ?, ?, ?)`;
+        const values = [schedule_id, user_id, creater_id, 0]; // req_status는 0으로 고정 (예: 대기 상태)
+
+        conn.query(insertMemberSql, values, (err, result) => {
+            if (err) {
+                console.error('스케줄 신청 삽입 오류:', err);
+                // 중복 신청 등 특정 오류에 대한 더 세부적인 메시지 처리가 필요할 수 있습니다.
+                if (err.code === 'ER_DUP_ENTRY') { // MySQL의 경우 중복 키 오류 코드
+                    return res.status(409).json({ success: false, message: '이미 신청된 스케줄입니다.' });
+                }
+                return res.status(500).json({ success: false, message: '서버 오류: 스케줄 신청 실패' });
+            }
+            return res.status(200).json({ success: true, message: '스케줄 신청 성공', insertedId: result.insertId });
+        });
+    });
+});
 
 // 서버 시작
 app.listen(3001, () => {
