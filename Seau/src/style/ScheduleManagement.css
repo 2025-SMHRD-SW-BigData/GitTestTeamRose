@@ -88,7 +88,7 @@
     height: 180px;
     /* object-fit: cover; */
     background-color: #f3f4f6;
-    /* display: flex; */
+    /* display: block; */
     align-items: center;
     justify-content: center;
     color: #6b7280;
