@@ -300,7 +300,7 @@ const Home = () => {
                           style={{ cursor: 'pointer', width: '295px' }}
                         >
 
-                          <div className="card-content">
+                          <div className="card-content" style={{paddingTop:'10px'}}>
                             <h4 className="card-title">{schedule.title}</h4>
                             {schedule.scheduleImage && (
                               <img
