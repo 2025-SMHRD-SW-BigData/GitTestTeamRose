@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Map, MapMarker } from 'react-kakao-maps-sdk';
+import { Map, MapMarker, CustomOverlayMap } from 'react-kakao-maps-sdk';
 import useKakaoLoader from './useKaKaoLoader';
 import axios from 'axios';
 import getDistance from './getDistance';
@@ -191,72 +191,99 @@ const KakaoMap = ({
             onZoomChanged={handleZoomChanged}
         >
             {markerList.map((m, i) => (
-                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image)}
-                    image={{
-                        src: '/blackMarker.png',
-                        size: {
-                            width: 35,
-                            height: 35
-                        },
-                        options: {
-                            offset: {
-                                x: 15,
-                                y: 35
+                <React.Fragment key={i}>
+                    <MapMarker position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image)}
+                        image={{
+                            src: '/blackMarker.png',
+                            size: { width: 35, height: 35 },
+                            options: {
+                                offset: { x: 15, y: 35 }
                             }
-                        }
-                    }}
-                >
-                    <div>{m.name}</div>
-                </MapMarker>
+                        }}
+                    />
+                    <CustomOverlayMap position={{ lat: m.lat, lng: m.lng }}>
+                        <div style={{
+                            transform: 'translate(-0%, -220%)',
+                            backgroundColor: 'rgba(255, 255, 255, 0.85)',
+                            color: 'black',
+                            padding: '4px 8px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                            userSelect: 'none',
+                            pointerEvents: 'none', // 텍스트가 클릭 이벤트 방해 안 하게
+                        }}>{m.name}</div>
+                    </CustomOverlayMap>
+                </React.Fragment>
             ))}
 
             {nearbyMarkers.map((m, i) => (
-                <MapMarker key={i} position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image, m)}
-                    image={{
-                        src: '/blueMarker.png',
-                        size: {
-                            width: 35,
-                            height: 35
-                        },
-                        options: {
-                            offset: {
-                                x: 15,
-                                y: 35
+                <React.Fragment key={i}>
+                    <MapMarker position={{ lat: m.lat, lng: m.lng }} onClick={() => onLocationSelect({ lat: m.lat, lng: m.lng }, m.image, m)}
+                        image={{
+                            src: m.type === 'beach' ? '/blackMarker.png' : '/blueMarker.png',
+                            size: { width: 35, height: 35 },
+                            options: {
+                                offset: { x: 15, y: 35 }
                             }
-                        }
-                    }}
-                >
-                    <div style={{ color: m.type === 'beach' ? 'black' : 'orange' }}>{m.name}</div>
-                </MapMarker>
+                        }}
+                    />
+                    <CustomOverlayMap position={{ lat: m.lat, lng: m.lng }}>
+                        <div style={{
+                            transform: 'translate(-0%, -220%)',
+                            backgroundColor: m.type === 'beach' ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.7)',  // ✅ 조건부 배경색
+                            color: m.type === 'beach' ? 'black' : 'orange',  // ✅ 조건부 텍스트 색
+                            padding: '4px 8px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                            userSelect: 'none',
+                            pointerEvents: 'none'
+                        }}>{m.name}</div>
+                    </CustomOverlayMap>
+                </React.Fragment>
             ))}
 
             {showSchedule && activeScheduleId && nearbySchedule
                 .filter(s => s.scheduleId === activeScheduleId)
                 .map(s => (
-                    <MapMarker key={s.scheduleId} position={{ lat: s.lat, lng: s.lng }}
+                    <React.Fragment key={s.scheduleId}>
+                    <MapMarker position={{ lat: s.lat, lng: s.lng }}
                         onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}
                         image={{
                             src: '/redMarker.png',
                             size: { width: 35, height: 35 },
                             options: { offset: { x: 15, y: 35 } }
                         }}
-                    >
-                        <div style={{ color: 'red' }}>{s.title}</div>
-                    </MapMarker>
+                    />
+                    <CustomOverlayMap position={{ lat: s.lat, lng: s.lng }}>
+                        <div style={{ 
+                            transform: 'translate(-0%, -220%)',
+                            backgroundColor: '#fdecea', 
+                            color: '#d32f2f',
+                            padding: '4px 8px',
+                            borderRadius: 8,
+                            fontSize: 12,
+                            fontWeight: 'bold',
+                            whiteSpace: 'nowrap',
+                            boxShadow: '0 2px 5px rgba(0,0,0,0.3)',
+                            userSelect: 'none',
+                            pointerEvents: 'none' 
+                            }}>{s.title}</div>
+                        </CustomOverlayMap>
+                    </React.Fragment>
                 ))}
 
             {selectedLocation && <MapMarker position={selectedLocation}
                 image={{
                     src: '/blueMarker.png',
-                    size: {
-                        width: 35,
-                        height: 35
-                    },
+                    size: { width: 35, height: 35 },
                     options: {
-                        offset: {
-                            x: 15,
-                            y: 35
-                        }
+                        offset: { x: 15, y: 35 }
                     }
                 }} />}
         </Map>

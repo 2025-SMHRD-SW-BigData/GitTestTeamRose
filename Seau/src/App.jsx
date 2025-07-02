@@ -70,7 +70,7 @@ function App() {
         <Route path='/login' element={<Login onLoginClick={openSidebar}></Login>}></Route>
         <Route path='/mypage' element={<Mypage ></Mypage>}></Route>
         <Route path='/mypage2' element={<Mypage2 ></Mypage2>}></Route>
-        <Route path='/' element={<Start isOpen={sidebarOpen} onClose={closeSidebar} initialMode={sidebarMode} />}></Route>
+        <Route path='/' element={<Start isOpen={sidebarOpen} onClose={closeSidebar} onOpen={openSidebar} initialMode={sidebarMode} />}></Route>
         <Route path='/profilemanagement' element = {<ProfileManagement></ProfileManagement>}></Route>
         <Route path='/schedule' element= {<ScheduleManagement></ScheduleManagement>}></Route>
       </Routes>
