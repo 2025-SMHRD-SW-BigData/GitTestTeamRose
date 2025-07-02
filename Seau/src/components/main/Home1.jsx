@@ -107,6 +107,48 @@ const Home = () => {
     }
   };
 
+  // --- 신청 취소 처리 함수 추가 ---
+  const handleCancelApplication = async (scheduleId) => {
+    if (!userId) {
+      alert('로그인 후 신청을 취소할 수 있습니다.');
+      return;
+    }
+    if (!window.confirm('정말로 이 스케줄 신청을 취소하시겠습니까?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:3001/schedule/cancel_apply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scheduleId: scheduleId,
+          userId: userId, // 현재 로그인한 사용자 ID
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('스케줄 신청이 성공적으로 취소되었습니다!');
+        // 신청 취소 후 scheduleMemberList 갱신: 해당 신청을 목록에서 제거
+        setScheduleMemberList(prev => prev.filter(
+          m => !(m.schedule_id === scheduleId && m.req_user_id === userId)
+        ));
+        // 필요하다면, 스케줄 리스트(참여자 수)도 갱신하는 로직을 추가해야 합니다.
+        // 현재 Home.jsx에서는 scheduleList를 직접 fetch하지 않으므로,
+        // KakaoMap 컴포넌트의 scheduleList prop이 업데이트되면 자동으로 반영될 것입니다.
+      } else {
+        alert(`스케줄 신청 취소 실패: ${data.message}`);
+      }
+    } catch (err) {
+      console.error('스케줄 신청 취소 중 오류 발생:', err);
+      alert('스케줄 신청 취소 중 오류가 발생했습니다.');
+    }
+  };
+  // --- 신청 취소 처리 함수 끝 ---
+
+
   const handleLogButton = () => {
     if (isOauth) {
       setIsOauth(false)
@@ -339,6 +381,17 @@ const Home = () => {
                                   >
                                     {isApplied ? '신청완료' : '신청'}
                                   </button>
+                                  {isApplied && (
+                                    <button
+                                      className="action-button danger" // danger 타입 버튼 사용
+                                      onClick={(e) => {
+                                        e.stopPropagation(); // 이벤트 버블링 방지
+                                        handleCancelApplication(schedule.scheduleId); // 신청 취소 함수 호출
+                                      }}
+                                    >
+                                      신청취소
+                                    </button>
+                                  )}
                                 </div>
                               </>
                             )}
