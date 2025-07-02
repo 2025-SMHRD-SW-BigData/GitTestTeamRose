@@ -224,11 +224,11 @@ export function CustomerSupport() {
   });
 
   const faqs = [
-    {
-      id: 1,
-      question: "비밀번호를 잊어버렸어요. 어떻게 재설정하나요?",
-      answer: "로그인 페이지에서 '비밀번호 찾기'를 클릭하시고, 가입하신 이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
-    },
+    // {
+    //   id: 1,
+    //   question: "비밀번호를 잊어버렸어요. 어떻게 재설정하나요?",
+    //   answer: "로그인 페이지에서 '비밀번호 찾기'를 클릭하시고, 가입하신 이메일 주소를 입력하시면 비밀번호 재설정 링크를 보내드립니다.",
+    // },
     {
       id: 2,
       question: "프로필 사진은 어떻게 변경하나요?",
@@ -259,11 +259,17 @@ export function CustomerSupport() {
       info: "support@company.com",
       description: "24시간 접수 가능",
     },
+  ]
+  const jejuSafePhoneNumber = [
     {
-      icon: <MessageCircle size={24} />,
-      title: "실시간 채팅",
-      info: "채팅 상담",
-      description: "평일 09:00 - 18:00",
+      icon: <Phone size={24} />,
+      title: "제주 재난안전대책본부",
+      info: "064-710-3671~8",
+    },
+    {
+      icon: <Phone size={24} />,
+      title: "해양경찰청 경비안전과",
+      info: "064-801-2446",
     },
   ];
 
@@ -292,6 +298,22 @@ export function CustomerSupport() {
         <CardContent>
           <ContactGrid>
             {contactMethods.map((method, index) => (
+              <ContactMethod key={index}>
+                <ContactIcon>{method.icon}</ContactIcon>
+                <ContactTitle>{method.title}</ContactTitle>
+                <ContactInfo>{method.info}</ContactInfo>
+                <ContactDesc>{method.description}</ContactDesc>
+              </ContactMethod>
+            ))}
+          </ContactGrid>
+        </CardContent>
+        <CardHeader>
+          <CardTitle>제주 재난·안전 연락처</CardTitle>
+          <Description>긴급 상황 발생 시 빠르게 연락할 수 있는 번호입니다.</Description>
+        </CardHeader>
+        <CardContent>
+          <ContactGrid>
+            {jejuSafePhoneNumber.map((method, index) => (
               <ContactMethod key={index}>
                 <ContactIcon>{method.icon}</ContactIcon>
                 <ContactTitle>{method.title}</ContactTitle>
@@ -332,7 +354,7 @@ export function CustomerSupport() {
       </Card>
 
       {/* 1:1 문의 */}
-      <Card>
+      {/* <Card>
         <CardHeader>
           <CardTitleMedium>1:1 문의</CardTitleMedium>
           <Description>FAQ에서 해결되지 않은 문제가 있으시면 직접 문의해주세요.</Description>
@@ -385,7 +407,7 @@ export function CustomerSupport() {
             <SubmitButton type="submit">문의하기</SubmitButton>
           </Form>
         </CardContent>
-      </Card>
+      </Card> */}
     </Container>
   );
 }

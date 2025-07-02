@@ -445,14 +445,14 @@ const Home = () => {
                           style={{ cursor: 'pointer', width: '295px' }}
                         >
 
-                          <div className="card-content" style={{ paddingTop: '10px' }}>
+                          <div className="card-content" style={{ paddingTop: '10px', height:'50%' }}>
                             <h4 className="card-title">{schedule.title}</h4>
                             {schedule.scheduleImage && (
                               <img
                                 src={schedule.scheduleImage}
                                 alt="Schedule"
                                 className="card-image"
-                              />
+                               />
                             )}
                             <div className="card-detail">
                               <strong>참여자:</strong> {approvCount}/{schedule.maxPeople}명
