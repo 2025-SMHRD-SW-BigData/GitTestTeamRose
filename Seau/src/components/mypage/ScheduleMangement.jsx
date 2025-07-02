@@ -1353,7 +1353,6 @@ export function ScheduleManagement() {
                             <ProfileDetail><strong>자기소개:</strong> {selectedMemberProfile.introduce || '없음'}</ProfileDetail>
                         </div>
                         <ProfileActions>
-                            {currentMemberStatusForModal === 0 && ( // 대기중인 경우에만 수락/거절 버튼 표시
                                 <>
                                     <ActionButton type="accept" onClick={() => handleAcceptReject('accept')}>
                                         수락
@@ -1362,7 +1361,6 @@ export function ScheduleManagement() {
                                         거절
                                     </ActionButton>
                                 </>
-                            )}
                             <ActionButton type="close" onClick={handleCloseProfileModal}>
                                 닫기
                             </ActionButton>

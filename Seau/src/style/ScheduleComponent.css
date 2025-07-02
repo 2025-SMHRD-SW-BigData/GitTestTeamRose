@@ -1,0 +1,491 @@
+.PageContainer {
+    padding: 2rem;
+    background-color: #f9fafb;
+    min-height: 100vh;
+}
+
+.Header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 1rem;
+}
+
+.Title {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.SectionTitle {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.Button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.Button.primary {
+    background-color: #7c3aed;
+    color: white;
+}
+.Button.primary:hover {
+    background-color: #6d28d9;
+}
+
+.Button.outline {
+    background-color: transparent;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+.Button.outline:hover {
+    background-color: #f9fafb;
+}
+
+.Button.danger {
+    background-color: #dc2626;
+    color: white;
+}
+.Button.danger:hover {
+    background-color: #b91c1c;
+}
+
+.ScheduleGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.ScheduleCard {
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.2s;
+}
+.ScheduleCard:hover {
+    transform: translateY(-5px);
+}
+
+.CardImage {
+    width: 100%;
+    height: 180px; /* 고정 높이 */
+    object-fit: cover;
+    background-color: #f3f4f6; /* 이미지 로딩 전/없을 때 배경 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.CardContent {
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.CardTitle {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.5rem;
+    word-break: break-word;
+}
+
+.CardDescription {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 1rem;
+
+    /* 웹킷 기반 브라우저 지원 */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+
+    /* 표준 속성 (크롬 86+, 파이어폭스 69+, 사파리 13.1+ 지원) */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    line-clamp: 2; /* 추가 */
+    box-orient: vertical; /* 추가 */
+
+    flex-grow: 1; /* 원래 있던 속성 */
+}
+
+.CardDetail {
+    font-size: 0.875rem;
+    color: #4b5563;
+    margin-bottom: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.CardActions {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.ActionButton {
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.ActionButton.edit {
+    background-color: #60a5fa;
+    color: white;
+}
+.ActionButton.edit:hover { background-color: #3b82f6; }
+
+.ActionButton.delete {
+    background-color: #ef4444;
+    color: white;
+}
+.ActionButton.delete:hover { background-color: #dc2626; }
+
+.ActionButton.members {
+    background-color: #a78bfa;
+    color: white;
+}
+.ActionButton.members:hover { background-color: #8b5cf6; }
+
+.ActionButton.accept {
+    background-color: #10b981;
+    color: white;
+}
+.ActionButton.accept:hover { background-color: #059669; }
+
+.ActionButton.reject {
+    background-color: #f59e0b;
+    color: white;
+}
+.ActionButton.reject:hover { background-color: #d97706; }
+
+.ActionButton.close {
+    background-color: #6b7280;
+    color: white;
+}
+.ActionButton.close:hover { background-color: #4b5563; }
+
+.EmptyState {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+    font-size: 1.125rem;
+}
+
+/* --- 모달 관련 스타일 --- */
+.ModalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.ModalOverlayProfile {
+    z-index: 1001; /* 프로필 모달은 멤버 모달 위에 오도록 */
+}
+
+.ModalContent {
+    background: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.ModalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ModalTitle {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.CloseButton {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: #6b7280;
+}
+.CloseButton:hover {
+    color: #111827;
+}
+
+.FormGroup {
+    margin-bottom: 1rem;
+}
+
+.Label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.Input {
+    width: 94%; /* 부모 요소에 맞게 조정 */
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+}
+.Input:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.Textarea {
+    width: 94%; /* 부모 요소에 맞게 조정 */
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    min-height: 80px;
+    resize: vertical;
+}
+.Textarea:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.Select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: white;
+    cursor: pointer;
+}
+.Select:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+.FormActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+}
+
+.MessageBar {
+    padding: 12px 24px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-weight: 500;
+    text-align: center;
+}
+.MessageBar.success {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.MessageBar.error {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.ScheduleMembersSection {
+    margin-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.5rem;
+}
+
+.MemberList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.MemberItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background-color: #f9fafb;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+}
+.MemberItem:hover {
+    background-color: #f3f4f6;
+}
+
+.MemberInfo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.MemberName {
+    font-weight: 500;
+    color: #374151;
+}
+
+.MemberStatus {
+    font-size: 0.875rem;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.MemberStatus[status="0"] { /* 대기중 */
+    background-color: #fef3c7;
+    color: #d97706;
+}
+.MemberStatus[status="1"] { /* 수락됨 */
+    background-color: #d1fae5;
+    color: #065f46;
+}
+.MemberStatus[status="2"] { /* 거절됨 */
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+.ProfileActions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.5rem;
+}
+
+.ProfileImageContainer {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.ProfileImage {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.ProfileDetail {
+    font-size: 1rem;
+    color: #4b5563;
+    margin-bottom: 0.5rem;
+}
+
+.AvatarContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.AvatarWrapper {
+    position: relative;
+}
+
+.Avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    overflow: hidden;
+    background-color: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.AvatarImage {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.AvatarFallback {
+    font-size: 32px;
+    font-weight: bold;
+    color: #6b7280;
+}
+
+.CameraButton {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background-color: #7c3aed;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.CameraButton:hover {
+    background-color: #6d28d9;
+}
+
+.HiddenInput {
+    display: none;
+}
+
+.HelpText {
+    font-size: 14px;
+    color: #6b7280;
+    text-align: center;
+}
