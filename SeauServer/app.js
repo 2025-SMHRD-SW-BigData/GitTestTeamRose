@@ -786,7 +786,7 @@ app.post('/deleteSchedule', (req, res) => {
 
 // 전체 스케줄 데이터 불러오기
 app.get('/schedules/get', (req, res) => {
-    let scheduleSql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id, schedule_image_url, schedule_id from schedules`
+    let scheduleSql = `select title, description, location_name, latitude, longitude, scheduled_date, max_participants, cost_per_person, status, address, user_id, schedule_image_url, schedule_id, user_type from schedules`
     let memberSql = 'select schedule_id, req_user_id, req_status from schedule_member'
     conn.connect();
     conn.query(scheduleSql, (err1, schedules) => {

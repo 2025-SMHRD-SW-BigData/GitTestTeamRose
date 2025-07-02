@@ -82,6 +82,7 @@ const KakaoMap = ({
                         userId: s.user_id,
                         scheduleImage: s.schedule_image_url,
                         scheduleId: s.schedule_id,
+                        scheduleType: s.user_type,
                     }));
 
                 const scheduleMembers = scheduleRes.data.members
@@ -105,7 +106,7 @@ const KakaoMap = ({
         const nearbyTour = placeMarkerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
         const nearbyBeach = markerList.filter(p => getDistance(selectedLocation.lat, selectedLocation.lng, p.lat, p.lng) < 5);
         const nearby = [...nearbyTour, ...nearbyBeach];
-        const filterd = scheduleList.filter((s) => getDistance(selectedLocation.lat, selectedLocation.lng, s.lat, s.lng) < 10)
+        const filterd = scheduleList.filter((s) => getDistance(selectedLocation.lat, selectedLocation.lng, s.lat, s.lng) < 5)
 
         setNearbyMarkers(nearby);
         onNearbyMarkersChange?.(nearby);
@@ -248,12 +249,11 @@ const KakaoMap = ({
                 </React.Fragment>
             ))}
 
-            {showSchedule && activeScheduleId && nearbySchedule
-                .filter(s => s.scheduleId === activeScheduleId)
+            {showSchedule && nearbySchedule
                 .map(s => (
                     <React.Fragment key={s.scheduleId}>
                     <MapMarker position={{ lat: s.lat, lng: s.lng }}
-                        onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, null, s)}
+                        onClick={() => onLocationSelect({ lat: s.lat, lng: s.lng }, s.scheduleImage, s)}
                         image={{
                             src: '/redMarker.png',
                             size: { width: 35, height: 35 },
