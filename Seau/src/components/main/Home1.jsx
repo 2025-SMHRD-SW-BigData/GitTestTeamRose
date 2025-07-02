@@ -233,7 +233,7 @@ const Home = () => {
 
               {selectedPlace && !selectedPlace.title && (
                 <div className='schedule-card' style={{ width: '295px' }}>
-                  <div className={selectedPlace.busy ? busyColor[selectedPlace.busy] : 'item'}>
+                  <div className={selectedPlace.busy ? busyColor[selectedPlace.busy] : 'item'} style={{marginBottom: '0px'}}>
                     <div className="itemName">{selectedPlace.name}</div>
                     {mediaData?.image?.[0] && (
                       <div className="selectedImageContainer">
@@ -248,7 +248,7 @@ const Home = () => {
                       {/* 운영 시간 */}
                       {selectedPlace.operatingTime && (
                         <div className="card-detail">
-                          <strong>운영시간:</strong> {selectedPlace.operatingTime}
+                          <strong style={{width:'67px'}}>운영시간:</strong> {selectedPlace.operatingTime}
                         </div>
                       )}
 
