@@ -37,26 +37,40 @@ const Home = () => {
   const [showSchedule, setShowSchedule] = useState(false)
   const [activeScheduleId, setActiveScheduleId] = useState(null);
   const [nearbySchedule, setNearbySchedule] = useState([])
+  const [scheduleSubTab, setScheduleSubTab] = useState('user');
+  const [matchedSchedulePlaces, setMatchedSchedulePlaces] = useState([]);
 
   const handleLocationSelect = async (location, imageUrl, placeInfo = null) => {
-    if (selectedLocation?.lat === location.lat && selectedLocation?.lng === location.lng) return
+    const normalizedPrev = selectedPlace ? normalizeName(selectedPlace.name) : '';
+    const normalizedNew = placeInfo ? normalizeName(placeInfo.name) : '';
+    console.log('handleLocationSelect 호출:', { location, imageUrl, placeInfo, selectedPlace });
 
+    const isSameLocation = selectedLocation &&
+      Math.abs(selectedLocation.lat - location.lat) < 0.0001 &&
+      Math.abs(selectedLocation.lng - location.lng) < 0.0001;
+
+    const isSamePlace = normalizedPrev === normalizedNew;
+
+    console.log('isSameLocation:', isSameLocation, 'isSamePlace:', isSamePlace);
+
+    if (isSameLocation && isSamePlace) return;
+
+    setLoading(true)
     setSelectedLocation(location)
     setSelectedPlace(placeInfo)
     setMediaData(imageUrl ? { image: [imageUrl], videos: [] } : { image: [], videos: [] })
-    setLoading(true)
-    setLeftPanelOpen(true)
-    setRightPanelOpen(true)
-    setRightTab('info')
-    setMapCenter(location)
-    setMapLevel(imageUrl ? 3 : 9)
 
-    setLoading(false)
+    setTimeout(() => {
+      setLeftPanelOpen(true)
+      setRightPanelOpen(true)
+      setMapCenter(location)
+      setMapLevel(imageUrl ? 3 : 9)
+      setLoading(false)
+    }, 100)
   }
 
   const handleImageClick = (location, imageUrl, placeInfo) => {
     handleLocationSelect(location, imageUrl, placeInfo)
-    setRightTab('info')
   }
 
   const handleNearbyMarkersChange = (nearby) => {
@@ -171,8 +185,47 @@ const Home = () => {
       </div>
     ))
 
-  console.log(scheduleMemberList)
-  console.log(nearbySchedule)
+  const filteredSchedules = nearbySchedule.filter(schedule =>
+    scheduleSubTab === 'user'
+      ? schedule.scheduleType === 0
+      : schedule.scheduleType === 1
+  );
+
+  const normalizeName = (str) =>
+    str.toLowerCase().replace(/\s/g, '').replace(/[^a-z0-9가-힣]/g, '')
+
+  useEffect(() => {
+    if (selectedLocation && selectedPlace && !loading) {
+      setLeftPanelOpen(true);
+      setRightPanelOpen(true);
+      console.log('selectedPlace.source:', selectedPlace?.source);
+      console.log('typeof source:', typeof selectedPlace?.source);
+      console.log('🔥 현재 selectedPlace:', selectedPlace);
+      console.log('🔥 조건 평가:', selectedPlace?.source !== 'schedule');
+    }
+  }, [selectedLocation, selectedPlace, loading]);
+
+  useEffect(() => {
+    const newMatches = nearbySchedule.map(schedule => {
+      const matchedPlace = nearbyAttractions.find(place =>
+        (Math.abs(place.lat - schedule.lat) < 0.0001 && Math.abs(place.lng - schedule.lng) < 0.0001) ||
+        normalizeName(place.name).includes(normalizeName(schedule.location)) ||
+        normalizeName(schedule.location).includes(normalizeName(place.name))
+      );
+
+      return {
+        scheduleId: schedule.scheduleId,
+        matchedPlace: matchedPlace || null
+      };
+    });
+
+    setMatchedSchedulePlaces(newMatches);
+  }, [nearbySchedule, nearbyAttractions]);
+
+  // console.log(scheduleMemberList)
+  // console.log(nearbySchedule)
+  // console.log(nearbyAttractions)
+  console.log(selectedPlace)
 
   return (
     <div className="container">
@@ -204,14 +257,55 @@ const Home = () => {
         </div>
 
         {nearestBeachName && <h3 style={{ marginBottom: 0 }}>{nearestBeachName}</h3>}
+        <div className='panelContent'>
+          {selectedPlace && (selectedPlace?.source?.trim() ?? '') !== 'schedule' && (
+            <div className='schedule-card' style={{ width: '295px' }}>
+              <div className={selectedPlace?.busy ? busyColor[selectedPlace?.busy] : 'item'} style={{ marginBottom: '0px' }}>
+                <div className="itemName">{selectedPlace?.name}</div>
+                {mediaData?.image?.[0] && (
+                  <div className="selectedImageContainer">
+                    <img src={mediaData.image[0]} alt="선택된 이미지" className="largeImage" />
+                  </div>
+                )}
+                <div className="itemInfo2">
+                  <p className="card-description">
+                    {selectedPlace?.description || '설명 없음'}
+                  </p>
+
+                  {/* 운영 시간 */}
+                  {selectedPlace?.operatingTime && (
+                    <div className="card-detail">
+                      <strong style={{ width: '67px' }}>운영시간:</strong> {selectedPlace?.operatingTime}
+                    </div>
+                  )}
+
+                  {/* 연락처 */}
+                  {selectedPlace?.phone && (
+                    <div className="card-detail">
+                      <strong>연락처:</strong> {selectedPlace?.phone}
+                    </div>
+                  )}
+
+                  {/* 혼잡도 상태 */}
+                  {selectedPlace?.busy && (
+                    <div className="card-detail">
+                      <strong>현재 상태:</strong> {selectedPlace?.busy}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {loading ? <div className="loading">로딩 중...</div> :
           selectedLocation && nearbyAttractions.length > 0 ? (
             <div className="panelContent">
               <div className="section">
-                <h3>🏛️ 관광지</h3>
+                <h3 style={{ marginTop: '05px' }}>🏛️ 관광지</h3>
                 {filteredCategories.attractions.length ? renderPlaceItems(filteredCategories.attractions, selectedPlace?.name) : <div>근처에 관광지가 없습니다.</div>}
               </div>
+
 
               <div className="section">
                 <h4>🍽️ 맛집</h4>
@@ -273,50 +367,41 @@ const Home = () => {
           {rightTab === 'info' && (
             <>
 
-              {selectedPlace && !selectedPlace.title && (
-                <div className='schedule-card' style={{ width: '295px' }}>
-                  <div className={selectedPlace.busy ? busyColor[selectedPlace.busy] : 'item'} style={{marginBottom: '0px'}}>
-                    <div className="itemName">{selectedPlace.name}</div>
-                    {mediaData?.image?.[0] && (
-                      <div className="selectedImageContainer">
-                        <img src={mediaData.image[0]} alt="선택된 이미지" className="largeImage" />
-                      </div>
-                    )}
-                    <div className="itemInfo2">
-                      <p className="card-description">
-                        {selectedPlace.description || '설명 없음'}
-                      </p>
 
-                      {/* 운영 시간 */}
-                      {selectedPlace.operatingTime && (
-                        <div className="card-detail">
-                          <strong style={{width:'67px'}}>운영시간:</strong> {selectedPlace.operatingTime}
-                        </div>
-                      )}
-
-                      {/* 연락처 */}
-                      {selectedPlace.phone && (
-                        <div className="card-detail">
-                          <strong>연락처:</strong> {selectedPlace.phone}
-                        </div>
-                      )}
-
-                      {/* 혼잡도 상태 */}
-                      {selectedPlace.busy && (
-                        <div className="card-detail">
-                          <strong>현재 상태:</strong> {selectedPlace.busy}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {showSchedule && (
                 <>
+                  {/* 서브탭 버튼 */}
+                  <div className="tabButtons" style={{ display: 'flex', marginBottom: '10px' }}>
+                    <button
+                      onClick={() => setScheduleSubTab('user')}
+                      style={{
+                        flex: 1,
+                        padding: 6,
+                        background: scheduleSubTab === 'user' ? '#ddd' : '#f9f9f9',
+                        border: '1px solid #ccc',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      일반 사용자 일정
+                    </button>
+                    <button
+                      onClick={() => setScheduleSubTab('business')}
+                      style={{
+                        flex: 1,
+                        padding: 6,
+                        background: scheduleSubTab === 'business' ? '#ddd' : '#f9f9f9',
+                        border: '1px solid #ccc',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      레저 업체 일정
+                    </button>
+                  </div>
+
                   <h3 style={{ margin: '10px' }}>📅 일정 리스트</h3>
                   <div className="schedule-grid">
-                    {nearbySchedule.map((schedule, idx) => {
+                    {filteredSchedules.map((schedule) => {
                       const approvCount = scheduleMemberList.filter(
                         (m) => m.schedule_id === schedule.scheduleId && m.req_status === 1
                       ).length;
@@ -325,24 +410,42 @@ const Home = () => {
                         (m) => m.schedule_id === schedule.scheduleId && m.req_user_id === userId
                       );
 
-                      const isExpanded = expandedScheduleIdx === idx;
-
+                      const isExpanded = expandedScheduleIdx === schedule.scheduleId;
                       return (
                         <div
-                          key={idx}
+                          key={schedule.scheduleId}
                           className="schedule-card"
                           onClick={() => {
-                            setExpandedScheduleIdx(prev => prev === idx ? null : idx);
-                            if (expandedScheduleIdx !== idx) {
-                              handleImageClick({ lat: schedule.lat, lng: schedule.lng }, null, schedule);
-                              setMapLevel(3);
-                              setActiveScheduleId(schedule.scheduleId);
-                            }
+                            console.log(schedule.scheduleType)
+                            console.log(schedule.location)
+                            console.log('첫 클릭 - nearbyAttractions:', nearbyAttractions);
+                            setExpandedScheduleIdx(prev => prev === schedule.scheduleId ? null : schedule.scheduleId);
+
+                            const matched = matchedSchedulePlaces.find(p => p.scheduleId === schedule.scheduleId);
+                            const matchedPlace = matched?.matchedPlace;
+
+                            const location = { lat: schedule.lat, lng: schedule.lng };
+                            const placeInfo = matchedPlace || {
+                              name: schedule.title,
+                              title: schedule.title,
+                              description: schedule.description,
+                              lat: schedule.lat,
+                              lng: schedule.lng,
+                              source: 'schedule',
+                              location: schedule.location,
+                            };
+
+                            const imageUrl = matchedPlace?.image || schedule.scheduleImage || null;
+
+                            handleImageClick(location, imageUrl, placeInfo);
+                            setMapLevel(3);
+                            setActiveScheduleId(schedule.scheduleId);
+
                           }}
                           style={{ cursor: 'pointer', width: '295px' }}
                         >
 
-                          <div className="card-content" style={{paddingTop:'10px'}}>
+                          <div className="card-content" style={{ paddingTop: '10px' }}>
                             <h4 className="card-title">{schedule.title}</h4>
                             {schedule.scheduleImage && (
                               <img
@@ -439,8 +542,8 @@ const Home = () => {
               // setMapCenter(INITIAL_CENTER)
               // setMapLevel(10)
               const defaultSchedule = nearbySchedule[0]; // 주변 스케줄이 있을 경우 첫 번째 선택
-              if (expandedScheduleIdx !== null && nearbySchedule[expandedScheduleIdx]) {
-                setActiveScheduleId(nearbySchedule[expandedScheduleIdx].scheduleId);
+              if (expandedScheduleIdx) {
+                setActiveScheduleId(expandedScheduleIdx);
               } else {
                 setActiveScheduleId(null);  // 펼친게 없으면 null
               }

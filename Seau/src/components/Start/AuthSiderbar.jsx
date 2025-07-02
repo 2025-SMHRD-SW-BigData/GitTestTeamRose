@@ -123,13 +123,13 @@ export function AuthSidebar({ isOpen, onClose, initialMode }) {
                     <Join2 formData={formData} onChange={handleInputChange} onSubmit={handleSubmit} />
                   )}
 
-                  {mode === "login" && (
+                  {/* {mode === "login" && (
                     <Box mt={2} textAlign="center">
                       <a href="#" style={{ fontSize: 14, color: "#7c3aed", textDecoration: "none" }}>
                         비밀번호를 잊으셨나요?
                       </a>
                     </Box>
-                  )}
+                  )} */}
 
                   {/* 로그인 / 회원가입 전환 */}
                   <Box mt={3} textAlign="center" sx={{ fontSize: 14, color: "text.secondary" }}>
