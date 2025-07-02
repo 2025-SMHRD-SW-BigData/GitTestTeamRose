@@ -132,7 +132,12 @@
   background: rgba(52, 152, 219, 0.1);
   border-radius: 8px;
   border-left: 3px solid #3498db;
+  transition: transform 0.2s;
 }
+.item:hover {
+  transform: translateY(-5px);
+}
+
 .itemBusy {
   padding: 10px;
   margin-bottom: 8px;
@@ -275,8 +280,12 @@
   height: 80px;
   object-fit: cover;
   border-radius: 8px;
+  transition: transform 0.2s;
 }
 
+.mediaImage:hover {
+  transform: translateY(-5px);
+}
 .largeImage {
   max-width: 100%;
   max-height: 400px;

@@ -20,9 +20,9 @@ const Start = ({ isOpen, onClose, initialMode }) => {
           duration: 1.4,
           y: { duration: 1 }
         }}
-        style={{marginTop:'300px'}}>
+        style={{marginTop:'250px'}}>
         <Typography
-          variant="h4"
+          variant="h2"
           component="div"
           sx={{
             fontWeight: "bold",
@@ -34,6 +34,10 @@ const Start = ({ isOpen, onClose, initialMode }) => {
           <h1>SeaU</h1>
         </Typography>
       </motion.div>
+
+          <div style={{height: '500px'}}>
+
+          </div>
 
       <motion.div
         initial={{ opacity: 0, y: 50 }}
