@@ -6,7 +6,6 @@ import { motion } from "framer-motion";
 import PeopleIcon from '@mui/icons-material/People';
 import MapIcon from '@mui/icons-material/Map';
 import CameraAltIcon from '@mui/icons-material/CameraAlt';
-import BookmarkIcon from '@mui/icons-material/Bookmark';
 
 const features = [
   {

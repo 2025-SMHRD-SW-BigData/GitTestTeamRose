@@ -604,10 +604,11 @@ export function ScheduleManagement() {
 
     // --- 모달 열고 닫는 함수들 ---
     const handleOpenCreateModal = () => {
+      console.log(placeData);
         // user_type이 1이고 placeData가 배열이며 첫 번째 요소가 있을 때 자동 채우기
-        if (userData && userData.user_type === 1 && placeData && placeData.length > 0) {
+        if (userData && userData.user_type === 1 ) {
             setNewSchedule({
-                title: '', description: '', location_name: placeData[0].place_name, address: placeData[0].address,
+                title: '', description: '', location_name: placeData.place_name, address: placeData.address,
                 scheduled_date: '', max_participants: '', cost_per_person: '',
                 schedule_image_url: '',
             });
