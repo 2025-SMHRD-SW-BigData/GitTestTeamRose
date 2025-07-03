@@ -134,7 +134,7 @@ const Start = ({ isOpen, onClose, initialMode, onOpen }) => {
             }}
             onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.05)')}
             onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1.0)')}
-            onClick={() => onOpen('login')}
+            onClick={() => onOpen('join')}
           >
             지금 시작하기
           </button>
