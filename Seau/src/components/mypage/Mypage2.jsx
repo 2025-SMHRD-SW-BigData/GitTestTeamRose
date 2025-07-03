@@ -278,7 +278,7 @@ export default function MyPage() {
     { id: 'profile', label: '프로필 관리', icon: <User size={20} /> },
     { id: 'password', label: '비밀번호 변경', icon: <Lock size={20} /> },
     { id: 'support', label: '고객센터', icon: <HelpCircle size={20} /> },
-    { id: 'schedule', label: '스케줄 생성', icon: <Calendar size={20} /> },
+    { id: 'schedule', label: '스케줄 관리', icon: <Calendar size={20} /> },
   ];
 
   const renderContent = () => {

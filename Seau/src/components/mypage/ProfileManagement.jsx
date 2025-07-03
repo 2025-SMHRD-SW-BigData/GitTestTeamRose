@@ -326,7 +326,7 @@ export function ProfileManagement() {
             // 백엔드에서 DATE_FORMAT을 사용해YYYY-MM-DD 형식으로 받았다면 그대로 사용
             // 그렇지 않다면, 이곳에서 직접 포매팅 로직을 추가해야 합니다.
             birthDate: result.birth_date ? result.birth_date.substring(0, 10) : '',
-            gender: result.gender, // 서버에서 받은 문자열 그대로 사용 (예: '남자', '여자')
+            gender: result.gender === null ? '' : result.gender,  // 서버에서 받은 문자열 그대로 사용 (예: '남자', '여자')
             phone: result.phone_number || '',
             mbti: result.mbti || '',
             introduction: result.introduce || '',
@@ -454,7 +454,7 @@ export function ProfileManagement() {
   };
 
   // --- UI에 표시될 성별 및 MBTI 옵션 (문자열 그대로) ---
-  const genderOptions = ['남자', '여자', '기타'];
+  const genderOptions = ['선택','남자', '여자'];
   const mbtiOptions = [
     'INTJ', 'INTP', 'ENTJ', 'ENTP',
     'INFJ', 'INFP', 'ENFJ', 'ENFP',
@@ -553,7 +553,7 @@ export function ProfileManagement() {
           <FormGroup>
             <Label>성별</Label>
             <Select
-              value={isEditing ? editData.gender : profileData.gender}
+              value={isEditing ? editData.gender : (profileData.gender===null?'선택':profileData.gender)}
               onChange={(e) => handleInputChange('gender', e.target.value)}
               disabled={!isEditing}
             >

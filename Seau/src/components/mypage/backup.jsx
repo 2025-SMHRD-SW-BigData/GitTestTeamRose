@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext, useCallback } from 'rea
 import styled from '@emotion/styled';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Edit, Save, X, Trash2, Camera } from 'lucide-react';
+import { Plus, Edit, Save, X, Trash2, Camera, XCircle } from 'lucide-react'; // XCircle 아이콘 추가
 import { UserContext } from '../../context/UserContext';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 
@@ -604,17 +604,14 @@ export function ScheduleManagement() {
 
     // --- 모달 열고 닫는 함수들 ---
     const handleOpenCreateModal = () => {
-        // user_type이 1이고 placeData가 있을 때 자동 채우기
-        console.log(placeData);
-        if (userData && userData.user_type === 1) { // placeData가 배열일 수 있으므로 첫 번째 요소 확인
-          
+        // user_type이 1이고 placeData가 배열이며 첫 번째 요소가 있을 때 자동 채우기
+        if (userData && userData.user_type === 1 && placeData && placeData.length > 0) {
             setNewSchedule({
-                title: '', description: '', location_name: placeData.place_name, address: placeData.address,
+                title: '', description: '', location_name: placeData[0].place_name, address: placeData[0].address,
                 scheduled_date: '', max_participants: '', cost_per_person: '',
                 schedule_image_url: '',
             });
         } else {
-            // user_type이 1이 아니거나 placeData가 없으면 빈 값으로 초기화
             setNewSchedule({
                 title: '', description: '', location_name: '', address: '',
                 scheduled_date: '', max_participants: '', cost_per_person: '',
@@ -694,7 +691,7 @@ export function ScheduleManagement() {
         }
     };
 
-    const handleImageClick = () => { // isForNewSchedule 인자 제거, imageInputRef는 하나만 사용
+    const handleImageClick = () => { // imageInputRef는 하나만 사용
         imageInputRef.current?.click();
     };
 
@@ -753,7 +750,7 @@ export function ScheduleManagement() {
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 생성되었습니다!', 'success');
                 handleCloseCreateModal();
-                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
+                fetchMyCreatedSchedules();
             } else {
                 showMessage(`스케줄 생성 실패: ${res.data.message}`, 'error');
             }
@@ -778,11 +775,10 @@ export function ScheduleManagement() {
         try {
             let finalScheduleImageUrl = editingSchedule.schedule_image_url;
 
-            // 1. 새 파일이 선택되었다면 AWS S3에 직접 업로드
             if (selectedScheduleImageFile) {
                 console.log('스케줄 이미지 업데이트 중 (AWS S3 직접 업로드)...');
                 const fileExtension = selectedScheduleImageFile.name.split('.').pop();
-                const s3Key = `schedule_images/${Date.now()}.${fileExtension}`; // userId를 키에 포함할 수도 있습니다.
+                const s3Key = `schedule_images/${Date.now()}.${fileExtension}`;
 
                 const arrayBuffer = await selectedScheduleImageFile.arrayBuffer();
                 const bodyData = new Uint8Array(arrayBuffer);
@@ -818,7 +814,7 @@ export function ScheduleManagement() {
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 업데이트되었습니다!', 'success');
                 handleCloseEditModal();
-                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
+                fetchMyCreatedSchedules();
             } else {
                 showMessage(`스케줄 업데이트 실패: ${res.data.message}`, 'error');
             }
@@ -837,7 +833,7 @@ export function ScheduleManagement() {
             const res = await axios.post('http://localhost:3001/deleteSchedule', { userId, scheduleId });
             if (res.data.success) {
                 showMessage('스케줄이 성공적으로 삭제되었습니다!', 'success');
-                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록만 새로고침
+                fetchMyCreatedSchedules();
             } else {
                 showMessage(`스케줄 삭제 실패: ${res.data.message}`, 'error');
             }
@@ -869,7 +865,6 @@ export function ScheduleManagement() {
     const handleMemberClickForProfile = async (e, scheduleId, memberId, reqStatus) => {
         e.stopPropagation();
         try {
-            // 백엔드에서 특정 사용자 프로필을 가져오는 GET 요청을 사용합니다.
             const res = await axios.get(`http://localhost:3001/users/${memberId}`);
             if (res.data.success) {
                 const memberProfile = res.data.data;
@@ -900,8 +895,8 @@ export function ScheduleManagement() {
 
             if (res.data.success) {
                 showMessage(`참여 요청이 성공적으로 ${message}되었습니다!`, 'success');
-                fetchScheduleMembers(selectedScheduleForMembers.schedule_id); // 멤버 목록 새로고침
-                fetchMyCreatedSchedules(); // 내가 만든 스케줄 목록의 참여자 수 업데이트를 위해 새로고침
+                fetchScheduleMembers(selectedScheduleForMembers.schedule_id);
+                fetchMyCreatedSchedules();
                 handleCloseProfileModal();
             } else {
                 showMessage(`참여 요청 ${message} 실패: ${res.data.message}`, 'error');
@@ -911,6 +906,31 @@ export function ScheduleManagement() {
             showMessage(`참여 요청 ${message} 중 오류가 발생했습니다.`, 'error');
         }
     };
+
+    // --- 신청 취소 처리 함수 ---
+    const handleCancelApplication = async (scheduleId) => {
+        if (!window.confirm('정말로 이 스케줄 신청을 취소하시겠습니까?')) {
+            return;
+        }
+
+        try {
+            const res = await axios.post('http://localhost:3001/schedule/cancel_apply', {
+                scheduleId: scheduleId,
+                userId: userId, // 현재 로그인한 사용자 ID
+            });
+
+            if (res.data.success) {
+                showMessage('스케줄 신청이 성공적으로 취소되었습니다!', 'success');
+                fetchMyAppliedSchedules(); // 신청 취소 후 내가 신청한 스케줄 목록 새로고침
+            } else {
+                showMessage(`스케줄 신청 취소 실패: ${res.data.message}`, 'error');
+            }
+        } catch (error) {
+            console.error('스케줄 신청 취소 중 오류 발생:', error);
+            showMessage('스케줄 신청 취소 중 오류가 발생했습니다. 다시 시도해주세요.', 'error');
+        }
+    };
+
 
     return (
         <PageContainer>
@@ -1012,14 +1032,20 @@ export function ScheduleManagement() {
                                 <CardDetail>
                                     <strong>비용:</strong> {schedule.cost_per_person.toLocaleString()}원/인
                                 </CardDetail>
-                                {/* 신청한 스케줄은 수정/삭제 버튼 대신 다른 액션 버튼이 필요할 수 있습니다. */}
-                                {/* 예: 신청 취소 버튼 등. 여기서는 일단 버튼을 제거했습니다. */}
+                                <CardActions>
+                                    {/* 신청 취소 버튼 추가 */}
+                                    <ActionButton
+                                        type="danger" // danger variant 사용
+                                        onClick={() => handleCancelApplication(schedule.schedule_id)}
+                                    >
+                                        <XCircle size={16} /> 신청 취소
+                                    </ActionButton>
+                                </CardActions>
                             </CardContent>
                         </ScheduleCard>
                     ))}
                 </ScheduleGrid>
             )}
-
 
             {/* 새 스케줄 생성 모달 */}
             {isCreateModalOpen && (
@@ -1044,7 +1070,7 @@ export function ScheduleManagement() {
                                         <AvatarFallback>No Image</AvatarFallback>
                                     )}
                                 </Avatar>
-                                <CameraButton type="button" onClick={handleImageClick}> {/* isForNewSchedule 인자 제거 */}
+                                <CameraButton type="button" onClick={handleImageClick}>
                                     <Camera size={16} />
                                 </CameraButton>
                                 <HiddenInput
@@ -1167,7 +1193,7 @@ export function ScheduleManagement() {
                                         <AvatarFallback>No Image</AvatarFallback>
                                     )}
                                 </Avatar>
-                                <CameraButton type="button" onClick={handleImageClick}> {/* isForNewSchedule 인자 제거 */}
+                                <CameraButton type="button" onClick={handleImageClick}>
                                     <Camera size={16} />
                                 </CameraButton>
                                 <HiddenInput
@@ -1179,6 +1205,7 @@ export function ScheduleManagement() {
                             </AvatarWrapper>
                             <HelpText>스케줄 대표 이미지를 변경하려면 카메라 아이콘을 클릭하세요</HelpText>
                         </AvatarContainer>
+                        {/* 이어서 폼 그룹들이 와야 합니다. */}
                         <FormGroup>
                             <Label htmlFor="edit-title">제목</Label>
                             <Input
