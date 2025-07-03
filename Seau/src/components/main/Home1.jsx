@@ -346,7 +346,7 @@ const Home = () => {
                 fontWeight: 'bold'
               }}
             >
-              상세 정보
+              스케줄 정보
             </button>
             <button
               onClick={() => setRightTab('media')}
