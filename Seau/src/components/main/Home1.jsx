@@ -7,6 +7,7 @@ import KakaoMap from './KakaoMap'
 import getDistance from './getDistance'
 import '../../style/Seau.css'
 import '../../style/ScheduleManagement.css'
+import axios from 'axios'
 
 const busyColor = {
   원활: 'item',
@@ -86,40 +87,54 @@ const Home = () => {
   }
 
   const handleApply = async (scheduleId) => {
-    try {
-      // 여기서 user_id는 로그인한 사용자 id를 의미합니다.
-      // 만약 상태관리(예: Context, Redux)나 props에서 받아온다면 그 값을 사용하세요.
+        try {
+            if (!userId) {
+                alert('로그인이 필요합니다.');
+                nav('/login');
+                return;
+            }
 
-      const response = await fetch('http://localhost:3001/schedule/apply', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          schedule_id: scheduleId,
-          user_id: userId,
-        }),
-      });
+            const response = await axios.post('http://localhost:3001/schedule/apply', {
+                schedule_id: scheduleId,
+                user_id: userId,
+            });
 
-      const data = await response.json();
+            if (response.data.success) {
+                alert('신청 성공!');
+                setScheduleMemberList(prev => [
+                    ...prev,
+                    {
+                        schedule_id: scheduleId,
+                        req_user_id: userId,
+                        req_status: 0
+                    }
+                ]);
+            } else {
+                // success: false 이지만 특정 메시지가 아닌 경우
+                alert('신청 실패: ' + response.data.message);
+            }
+        } catch (error) {
+            console.error('신청 중 오류:', error); // 콘솔에서 어떤 오류 객체가 넘어오는지 확인
+            console.error('Error response:', error.response); // 특히 이 부분을 확인
 
-      if (data.success) {
-        alert('신청 성공!');
-        // 신청 후 상태 갱신
-        setScheduleMemberList(prev => [
-          ...prev,
-          {
-            schedule_id: scheduleId,
-            req_user_id: userId,
-            req_status: 0  // 대기 상태로 추가 (클라이언트에서는 중요 X)
-          }
-        ]);
-      } else {
-        alert('신청 실패: ' + data.message);
-      }
-    } catch (err) {
-      console.error('신청 중 오류:', err);
-      alert('신청 중 오류가 발생했습니다.');
-    }
-  };
+            // 서버에서 보낸 특정 에러 메시지 처리 (프로필 정보 누락)
+            // error.response가 있고, status가 403이며, data.message가 'UserProfileIncomplete'인지 정확히 확인
+            if (error.response && error.response.status === 403 && error.response.data.message === 'UserProfileIncomplete') {
+                const confirmMove = window.confirm('프로필에서 생년월일, 성별, 전화번호를 설정하고 신청해주세요!');
+                if (confirmMove) {
+                    nav('/mypage2'); // 마이페이지로 자동 이동
+                }
+            }
+            // 중복 신청 오류 처리
+            else if (error.response && error.response.status === 409) {
+                alert('이미 신청된 스케줄입니다.');
+            }
+            // 그 외의 일반적인 네트워크 또는 서버 오류
+            else {
+                alert('신청 중 알 수 없는 오류가 발생했습니다.');
+            }
+        }
+    };
 
   // --- 신청 취소 처리 함수 추가 ---
   const handleCancelApplication = async (scheduleId) => {
