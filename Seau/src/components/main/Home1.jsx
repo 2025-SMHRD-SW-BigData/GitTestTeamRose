@@ -19,8 +19,7 @@ const INITIAL_CENTER = { lat: 33.36167, lng: 126.52917 }
 
 const Home = () => {
   const nav = useNavigate()
-  const { userId, setUserId, isOauth, setIsOauth } = useContext(UserContext)
-
+  const { userId, setUserId, isOauth, setIsOauth, userData } = useContext(UserContext)
   const [selectedLocation, setSelectedLocation] = useState(null)
   const [mediaData, setMediaData] = useState(null)
   const [loading, setLoading] = useState(false)
@@ -87,54 +86,54 @@ const Home = () => {
   }
 
   const handleApply = async (scheduleId) => {
-        try {
-            if (!userId) {
-                alert('로그인이 필요합니다.');
-                nav('/login');
-                return;
-            }
+    try {
+      if (!userId) {
+        alert('로그인이 필요합니다.');
+        nav('/login');
+        return;
+      }
 
-            const response = await axios.post('http://localhost:3001/schedule/apply', {
-                schedule_id: scheduleId,
-                user_id: userId,
-            });
+      const response = await axios.post('http://localhost:3001/schedule/apply', {
+        schedule_id: scheduleId,
+        user_id: userId,
+      });
 
-            if (response.data.success) {
-                alert('신청 성공!');
-                setScheduleMemberList(prev => [
-                    ...prev,
-                    {
-                        schedule_id: scheduleId,
-                        req_user_id: userId,
-                        req_status: 0
-                    }
-                ]);
-            } else {
-                // success: false 이지만 특정 메시지가 아닌 경우
-                alert('신청 실패: ' + response.data.message);
-            }
-        } catch (error) {
-            console.error('신청 중 오류:', error); // 콘솔에서 어떤 오류 객체가 넘어오는지 확인
-            console.error('Error response:', error.response); // 특히 이 부분을 확인
+      if (response.data.success) {
+        alert('신청 성공!');
+        setScheduleMemberList(prev => [
+          ...prev,
+          {
+            schedule_id: scheduleId,
+            req_user_id: userId,
+            req_status: 0
+          }
+        ]);
+      } else {
+        // success: false 이지만 특정 메시지가 아닌 경우
+        alert('신청 실패: ' + response.data.message);
+      }
+    } catch (error) {
+      console.error('신청 중 오류:', error); // 콘솔에서 어떤 오류 객체가 넘어오는지 확인
+      console.error('Error response:', error.response); // 특히 이 부분을 확인
 
-            // 서버에서 보낸 특정 에러 메시지 처리 (프로필 정보 누락)
-            // error.response가 있고, status가 403이며, data.message가 'UserProfileIncomplete'인지 정확히 확인
-            if (error.response && error.response.status === 403 && error.response.data.message === 'UserProfileIncomplete') {
-                const confirmMove = window.confirm('프로필에서 생년월일, 성별, 전화번호를 설정하고 신청해주세요!');
-                if (confirmMove) {
-                    nav('/mypage2'); // 마이페이지로 자동 이동
-                }
-            }
-            // 중복 신청 오류 처리
-            else if (error.response && error.response.status === 409) {
-                alert('이미 신청된 스케줄입니다.');
-            }
-            // 그 외의 일반적인 네트워크 또는 서버 오류
-            else {
-                alert('신청 중 알 수 없는 오류가 발생했습니다.');
-            }
+      // 서버에서 보낸 특정 에러 메시지 처리 (프로필 정보 누락)
+      // error.response가 있고, status가 403이며, data.message가 'UserProfileIncomplete'인지 정확히 확인
+      if (error.response && error.response.status === 403 && error.response.data.message === 'UserProfileIncomplete') {
+        const confirmMove = window.confirm('프로필에서 생년월일, 성별, 전화번호를 설정하고 신청해주세요!');
+        if (confirmMove) {
+          nav('/mypage2'); // 마이페이지로 자동 이동
         }
-    };
+      }
+      // 중복 신청 오류 처리
+      else if (error.response && error.response.status === 409) {
+        alert('이미 신청된 스케줄입니다.');
+      }
+      // 그 외의 일반적인 네트워크 또는 서버 오류
+      else {
+        alert('신청 중 알 수 없는 오류가 발생했습니다.');
+      }
+    }
+  };
 
   // --- 신청 취소 처리 함수 추가 ---
   const handleCancelApplication = async (scheduleId) => {
@@ -460,14 +459,14 @@ const Home = () => {
                           style={{ cursor: 'pointer', width: '295px' }}
                         >
 
-                          <div className="card-content" style={{ paddingTop: '10px', height:'50%' }}>
+                          <div className="card-content" style={{ paddingTop: '10px', height: '50%' }}>
                             <h4 className="card-title">{schedule.title}</h4>
                             {schedule.scheduleImage && (
                               <img
                                 src={schedule.scheduleImage}
                                 alt="Schedule"
                                 className="card-image"
-                               />
+                              />
                             )}
                             <div className="card-detail">
                               <strong>참여자:</strong> {approvCount}/{schedule.maxPeople}명
@@ -489,22 +488,27 @@ const Home = () => {
                                   <strong>상태:</strong> {schedule.status}
                                 </div>
                                 <div className="card-actions">
-                                  <button
-                                    className={`action-button ${isApplied ? 'close' : 'accept'}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (!isApplied) handleApply(schedule.scheduleId);
-                                    }}
-                                    disabled={isApplied}
-                                  >
-                                    {isApplied ? '신청완료' : '신청'}
-                                  </button>
-                                  {isApplied && (
+                                  {/* user_type이 1이 아닐 때만 신청/신청완료 버튼을 렌더링 */}
+                                  {userData && userData.user_type !== 1 && (
                                     <button
-                                      className="action-button danger" // danger 타입 버튼 사용
+                                      className={`action-button ${isApplied ? 'close' : 'accept'}`}
                                       onClick={(e) => {
-                                        e.stopPropagation(); // 이벤트 버블링 방지
-                                        handleCancelApplication(schedule.scheduleId); // 신청 취소 함수 호출
+                                        e.stopPropagation();
+                                        if (!isApplied) handleApply(schedule.scheduleId);
+                                      }}
+                                      disabled={isApplied}
+                                    >
+                                      {isApplied ? '신청완료' : '신청'}
+                                    </button>
+                                  )}
+
+                                  {/* user_type이 1이 아닐 때만 신청취소 버튼을 렌더링 */}
+                                  {isApplied && userData && userData.user_type !== 1 && (
+                                    <button
+                                      className="action-button danger"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleCancelApplication(schedule.scheduleId);
                                       }}
                                     >
                                       신청취소

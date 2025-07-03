@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { Box, Typography, Button } from "@mui/material";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -9,12 +9,31 @@ export default function Login({ formData, onChange}) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { setUserId, setIsOauth } = useContext(UserContext);
+  const { userId,setUserId, setIsOauth } = useContext(UserContext);
+  const {userData, setUserData} = useContext(UserContext);
+  const {placeData, setPlaceData} = useContext(UserContext);
   const nav = useNavigate();
+
+  // userData 상태가 변경될 때마다 이 로그가 찍힙니다.
+  // 이 방법이 setUserData가 "확실하게 작동하는지" 확인하는 가장 정확한 방법입니다.
+  useEffect(() => {
+    if (userData) {
+      console.log("useEffect에서 확인된 업데이트된 userData:", userData);
+    }
+  }, [userData]); // userData가 변경될 때마다 실행
+
+  // placeData 상태가 변경될 때마다 이 로그가 찍힙니다.
+  useEffect(() => {
+    if (placeData) {
+      console.log("useEffect에서 확인된 업데이트된 placeData:", placeData);
+    }
+  }, [placeData]); // placeData가 변경될 때마다 실행
+
 
   const tryLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setUserId(formData.id)
 
     try {
       const res = await axios.post("http://localhost:3001/login", {
@@ -24,8 +43,14 @@ export default function Login({ formData, onChange}) {
 
       if (res.data === "인증성공") {
         console.log("로그인 성공:", res.data);
-        setUserId(formData.id);
+        
         setIsOauth(true);
+        const res2 = await axios.post("http://localhost:3001/mypage",{
+          userId : formData.id,
+        })
+        console.log(res2.data.data);
+        setUserData(res2.data.data.user);
+        setPlaceData(res2.data.data.place?.[0]);
         nav("/home1");
       } else if (res.data === "인증실패") {
         console.log("로그인 실패", res.data);

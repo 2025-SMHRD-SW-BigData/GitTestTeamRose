@@ -34,6 +34,7 @@ let conn = mysql.createConnection({
 app.post('/', (req, res) => {
     const { id, pw, nick, gender, name, birthDay, introduce, phoneNumber, mbti, usertype } = req.body;
     console.log('접근 확인!');
+    console.log(usertype);
     let sql = 'insert into users(user_id, user_pw,user_name, phone_number, nickname, birth_date, gender, introduce,mbti, user_type) values(?,?,?,?,?,?,?,?,?,?)';
 
     conn.connect(); // db 연결통로 열기

@@ -16,7 +16,7 @@ export default function Join({ formData, onChange }) {
         id: formData.id,
         pw: formData.password,
         name: formData.name,
-        usertype: formData.userType
+        usertype: (formData.userType=='1'?1:0)
       })
       .then((res) => {
         if (res.data === "가입성공") {
