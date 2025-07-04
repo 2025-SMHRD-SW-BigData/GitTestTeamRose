@@ -280,7 +280,7 @@ const KakaoMap = ({
 
             {selectedLocation && <MapMarker position={selectedLocation}
                 image={{
-                    src: '/blueMarker.png',
+                    src: '/yellowMarker.png',
                     size: { width: 35, height: 35 },
                     options: {
                         offset: { x: 15, y: 35 }
