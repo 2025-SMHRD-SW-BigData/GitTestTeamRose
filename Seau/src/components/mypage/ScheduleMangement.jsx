@@ -1296,7 +1296,7 @@ export function ScheduleManagement() {
                     <ModalContent onClick={(e) => e.stopPropagation()}>
                         <ModalHeader>
                             <ModalTitle>{selectedScheduleForMembers.title} 참여자 목록</ModalTitle>
-                            <CloseButton onClick={handleCloseMembersModal}>닫기</CloseButton>
+                            {/* <CloseButton onClick={handleCloseMembersModal}>닫기</CloseButton> */}
                         </ModalHeader>
                         <ScheduleMembersSection style={{ borderTop: 'none', paddingTop: '0' }}>
                             <SectionTitle>참여 요청 ({scheduleMembers[selectedScheduleForMembers.schedule_id]?.length || 0}건)</SectionTitle>
@@ -1336,7 +1336,7 @@ export function ScheduleManagement() {
                     <ModalContent onClick={(e) => e.stopPropagation()}>
                         <ModalHeader>
                             <ModalTitle>{selectedMemberProfile.user_id}님의 프로필</ModalTitle>
-                            <CloseButton onClick={handleCloseProfileModal}>닫기</CloseButton>
+                            {/* <CloseButton onClick={handleCloseProfileModal}>닫기</CloseButton> */}
                         </ModalHeader>
                         <ProfileImageContainer>
                             {selectedMemberProfile.profile_image_url ? (

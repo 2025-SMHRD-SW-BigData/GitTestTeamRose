@@ -28,7 +28,7 @@ const Home = () => {
   const [mapCenter, setMapCenter] = useState(INITIAL_CENTER)
   const [mapLevel, setMapLevel] = useState(9)
   const [selectedPlace, setSelectedPlace] = useState(null)
-  const [rightTab, setRightTab] = useState('info')
+  const [rightTab, setRightTab] = useState('media')
   const [scheduleList, setScheduleList] = useState([])
   const [scheduleMemberList, setScheduleMemberList] = useState([])
   const [expandedScheduleIdx, setExpandedScheduleIdx] = useState(null)
@@ -66,6 +66,7 @@ const Home = () => {
       setMapCenter(location)
       setMapLevel(imageUrl ? 3 : 9)
       setLoading(false)
+      setRightTab(showSchedule ? 'info' : 'media')
     }, 100)
   }
 
@@ -348,20 +349,7 @@ const Home = () => {
 
           {/* 탭 버튼 */}
           <div className="tabButtons" style={{ display: 'flex', borderBottom: '1px solid #ccc', margin: '10px 0' }}>
-            <button
-              onClick={() => setRightTab('info')}
-              style={{
-                flex: 1,
-                padding: 8,
-                background: rightTab === 'info' ? '#eee' : 'transparent',
-                border: 'none',
-                borderBottom: rightTab === 'info' ? '2px solid #333' : 'none',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-              }}
-            >
-              스케줄 정보
-            </button>
+
             <button
               onClick={() => setRightTab('media')}
               style={{
@@ -375,6 +363,20 @@ const Home = () => {
               }}
             >
               주변 지역
+            </button>
+            <button
+              onClick={() => setRightTab('info')}
+              style={{
+                flex: 1,
+                padding: 8,
+                background: rightTab === 'info' ? '#eee' : 'transparent',
+                border: 'none',
+                borderBottom: rightTab === 'info' ? '2px solid #333' : 'none',
+                cursor: 'pointer',
+                fontWeight: 'bold'
+              }}
+            >
+              스케줄 정보
             </button>
           </div>
 
@@ -558,6 +560,7 @@ const Home = () => {
             if (next) {
               // setSelectedLocation(INITIAL_CENTER)
               setRightPanelOpen(true)
+              setRightTab('info')
               // setMapCenter(INITIAL_CENTER)
               // setMapLevel(10)
               const defaultSchedule = nearbySchedule[0]; // 주변 스케줄이 있을 경우 첫 번째 선택
@@ -567,7 +570,8 @@ const Home = () => {
                 setActiveScheduleId(null);  // 펼친게 없으면 null
               }
             } else {
-              setRightPanelOpen(false)
+              // setRightPanelOpen(false)
+              setRightTab('media')
               setActiveScheduleId(null)
             }
           }}
