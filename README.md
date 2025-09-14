@@ -8,11 +8,11 @@ YOLOv8을 활용한 실시간 도로 손상 감지 및 위험도 평가 서비�
 2025.06.05~25.07.07
 
 # 개발자 소개(역할분담 상세)
-팀장 : 박주진
+팀장 : 박주진 - 백엔드, 데이터 모델링, DB 설계 및 구축
 
-팀원 : 장강욱
+팀원 : 장강욱 - 프론트엔드, 백엔드
 
-팀원 : 김미지
+팀원 : 김미지 - 프로젝트 기획 및 관리, UI & UX 설계
 
 # 개발환경
 Visual Studio Code
@@ -21,19 +21,21 @@ Visual Studio Code
 React, node.js, MySQL, AWS S3, Weather API, Kakao Map API
 
 # 주요기능
-+ 실시간 push 알림 기능
-    + 관리자가 통제구역 추가시 실시간 push 알림 서비스 제공
-+ 지도 기반 위험 정보 제공
-    + 주변 300m내 위험 정보 존재시 현재위치에 빨간점으로 시각화
-    + 마커 클릭시 상세 내용 확인 가능
-+ 민원 신고 기능
-    + 소셜 로그인으로 간편 로그인 가능
-    + 클라우드 스토리지와 연동하여 제보 이미지 저장
-    + 민원신고 완료시 웹 관리자 대시보드로 실시간 알림 발송
-    + 제보된 이미지를 바탕으로 관리자가 AI 도로파손 분석
++ 지도기반 정보 제공 서비스
+    + 카카오 맵 API를 이용하여 지도 화면 구성
+    + 사용자 위치반경 5km 이내의 관광지, 맛집, 레저업체 정보 제공
+    + 날씨 API와 연동하여 온도, 날씨 , 습도, 풍속 등의 실시간 정보 제공
+    + 혼잡도 현황을 사업자 유저가 실시간으로 색상으로 변경 가능
++ 일정 기반 해양 레저 매칭 기능
+    + 사용자가 직접 일정을 등록
+    + 사용자들이 일정에 실시간으로 참가신청을 하고 일정 등록자가 참가자의 프로필을 확인한후 참가 수락, 거절 가능
+    + 사업자 - 이용자 양방향 운영 구조 : 사업자가 직접 자신의 사업체 정보를 수정함으로써 실시간 운영 가능 및 사업자도 매칭기능을 통해 사업체 운영에 도움을 받음
++ 마이페이지
+    + 일반 회원의 경우 프로필 수정가능
+    + 사업자 획원의 경우 사업체 등록 및 사업체 정보 수정 가능 및 혼잡도 현황 직접 수정 가능
       
 # 프로젝트 아키텍쳐
 ![아키텍처](https://github.com/2025-SMHRD-SW-BigData/GitTestTeamRose/blob/master/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.jpg?raw=true)
 
 # 최종발표자료
-[(https://www.canva.com/design/DAGyomBQRs0/4u21qiH1jrva4l-i-febYQ/edit?utm_content=DAGyomBQRs0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)](https://docs.google.com/presentation/d/1cDwJQchbxFeGGA4XmBWBxqWM-ZvOxXKc82-aXK1iKWQ/edit?slide=id.g36d24c68ce2_1_497#slide=id.g36d24c68ce2_1_497)
+(https://docs.google.com/presentation/d/1cDwJQchbxFeGGA4XmBWBxqWM-ZvOxXKc82-aXK1iKWQ/edit?slide=id.g36d24c68ce2_1_497#slide=id.g36d24c68ce2_1_497)
