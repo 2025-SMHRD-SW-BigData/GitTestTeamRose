@@ -33,7 +33,7 @@ React, node.js, MySQL, AWS S3, Weather API, Kakao Map API
     + 제보된 이미지를 바탕으로 관리자가 AI 도로파손 분석
       
 # 프로젝트 아키텍쳐
-![아키텍처]([https://github.com/2025-SMHRD-SW-BigData/DevMour/blob/master/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.jpg?raw=true](https://github.com/2025-SMHRD-SW-BigData/GitTestTeamRose/blob/master/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.jpg?raw=true))
+![아키텍처](https://github.com/2025-SMHRD-SW-BigData/GitTestTeamRose/blob/master/%EC%95%84%ED%82%A4%ED%85%8D%EC%B2%98.jpg?raw=true)
 
 # 최종발표자료
 [(https://www.canva.com/design/DAGyomBQRs0/4u21qiH1jrva4l-i-febYQ/edit?utm_content=DAGyomBQRs0&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)](https://docs.google.com/presentation/d/1cDwJQchbxFeGGA4XmBWBxqWM-ZvOxXKc82-aXK1iKWQ/edit?slide=id.g36d24c68ce2_1_497#slide=id.g36d24c68ce2_1_497)
